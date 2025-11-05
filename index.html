@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Content Hub</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: system-ui, sans-serif;
+    }
+    body {
+      margin: 0;
+      padding: 16px;
+      background: #f5f5f5;
+    }
+    h1 {
+      margin-top: 0;
+    }
+    .layout {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: 320px 1fr;
+      align-items: start;
+    }
+    .panel {
+      background: #fff;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+    }
+    .panel h2 {
+      margin-top: 0;
+      font-size: 1.1rem;
+    }
+    label {
+      display: flex;
+      flex-direction: column;
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+      gap: 4px;
+    }
+    input, textarea, select {
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font: inherit;
+    }
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+    button {
+      cursor: pointer;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      background: #333;
+      color: #fff;
+      font-weight: 600;
+      transition: background 0.2s ease;
+    }
+    button:hover {
+      background: #111;
+    }
+    .cards {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      align-items: stretch;
+      grid-auto-rows: 1fr;
+    }
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-height: 320px;
+      border: 1px solid #e3e3e3;
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+    }
+    .status {
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      background: #f0f0f0;
+      color: #444;
+    }
+    .status[data-state="in-progress"] {
+      background: #fde7aa;
+      color: #8a5a00;
+    }
+    .status[data-state="completed"] {
+      background: #c7f5c4;
+      color: #1d7018;
+    }
+    .card-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .card-actions button.secondary {
+      background: #e0e0e0;
+      color: #222;
+    }
+    .card-actions button.secondary.small {
+      padding: 4px 8px;
+      font-size: 0.8rem;
+    }
+    .card-actions button.danger {
+      background: #d9534f;
+    }
+    .card-body {
+      display: grid;
+      gap: 12px;
+    }
+    .content-block {
+      border: 1px solid #ececec;
+      border-radius: 6px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: #fafafa;
+    }
+    .content-block[data-mode="edit"] {
+      background: #fff6e8;
+      border-color: #ffd299;
+    }
+    .content-block header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .content-block header h4 {
+      margin: 0;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #333;
+    }
+    .content-block button {
+      align-self: flex-start;
+    }
+    .content-editor {
+      min-height: 160px;
+      border-radius: 6px;
+      border: 1px solid #d4d4d4;
+      padding: 10px;
+      font: inherit;
+      resize: vertical;
+      background: #fff;
+    }
+    .content-block[data-expanded="true"] .content-text {
+      max-height: none;
+    }
+    .content-block[data-empty="true"] .content-text {
+      color: #777;
+      font-style: italic;
+    }
+    .content-text {
+      overflow: hidden;
+      max-height: 160px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      color: #333;
+    }
+    .content-text p {
+      margin: 0;
+      line-height: 1.45;
+    }
+    .content-text p + p {
+      margin-top: 8px;
+    }
+    .content-text ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+    .content-text li + li,
+    .content-text p + ul,
+    .content-text ul + p {
+      margin-top: 4px;
+    }
+    @media (max-width: 860px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+      .cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Content Hub</h1>
+  <div class="layout">
+    <section class="panel">
+      <h2>Create Card</h2>
+      <form id="card-form">
+        <label>
+          Handle / Project
+          <input id="field-handle" name="handle" placeholder="@lana_yaps" required />
+        </label>
+        <label>
+          Headline
+          <input id="field-title" name="title" placeholder="Theme or goal for this card" required />
+        </label>
+        <label>
+          Status
+          <select id="field-status" name="status">
+            <option value="draft">Draft</option>
+            <option value="in-progress">In Progress</option>
+            <option value="completed">Completed</option>
+          </select>
+        </label>
+        <label>
+          Notes & Script
+          <textarea id="field-notes" name="notes" placeholder="Brainstorm, outline, scripts..." required></textarea>
+        </label>
+        <button type="submit">Save Card</button>
+      </form>
+    </section>
+    <section class="panel">
+      <div class="card-actions" style="justify-content: space-between; align-items:center; margin-bottom: 12px;">
+        <h2 style="margin:0;">Cards</h2>
+        <select id="filter-status">
+          <option value="all">All statuses</option>
+          <option value="draft">Draft</option>
+          <option value="in-progress">In Progress</option>
+          <option value="completed">Completed</option>
+        </select>
+      </div>
+      <div id="card-list" class="cards"></div>
+    </section>
+  </div>
+  <template id="card-template">
+    <article class="card">
+      <header class="card-header">
+        <div>
+          <h3 data-handle></h3>
+          <small data-title></small>
+        </div>
+        <span class="status" data-status></span>
+      </header>
+      <section class="card-body" data-card-body>
+        <div class="content-block" data-block="notes">
+          <header>
+            <h4>Notes & Script</h4>
+          </header>
+          <div data-notes class="content-text"></div>
+          <textarea data-notes-input class="content-editor" hidden></textarea>
+          <button type="button" class="secondary small" data-toggle-expand="notes" hidden>Show more</button>
+        </div>
+      </section>
+      <footer class="card-actions">
+        <button type="button" class="secondary" data-toggle-edit>Edit</button>
+        <button type="button" class="secondary" data-cycle-status>Next Status</button>
+        <button type="button" class="danger" data-delete>Delete</button>
+        <button type="button" hidden data-save>Save</button>
+        <button type="button" class="secondary" hidden data-cancel>Cancel</button>
+      </footer>
+    </article>
+  </template>
+  <script>
+    const STORAGE_KEY = "content-hub.cards";
+    const COLLAPSED_HEIGHT = 160;
+    const STATUS_RANK = {
+      draft: 0,
+      "in-progress": 1,
+      completed: 2,
+    };
+
+    /** @typedef {{id:string, handle:string, title:string, status:"draft"|"in-progress"|"completed", notes:string, updatedAt:number}} Card */
+
+    /** @returns {Card[]} */
+    function loadCards() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return [];
+      try {
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return [];
+        return parsed.map(card => {
+          const {
+            id,
+            handle,
+            title,
+            status,
+            notes,
+            script,
+            updatedAt,
+          } = card || {};
+          const baseNotes = typeof notes === "string" ? notes : "";
+          const scriptNotes = typeof script === "string" ? script : "";
+          const mergedNotes = baseNotes && scriptNotes
+            ? `${baseNotes}\n\n${scriptNotes}`
+            : (baseNotes || scriptNotes);
+          return {
+            id: typeof id === "string" ? id : crypto.randomUUID(),
+            handle: typeof handle === "string" ? handle : "",
+            title: typeof title === "string" ? title : "",
+            status: ["draft", "in-progress", "completed"].includes(status) ? status : "draft",
+            notes: mergedNotes,
+            updatedAt: typeof updatedAt === "number" ? updatedAt : Date.now(),
+          };
+        });
+      } catch (_) {
+        console.warn("Failed to parse stored cards, resetting.");
+        localStorage.removeItem(STORAGE_KEY);
+        return [];
+      }
+    }
+
+    /** @param {Card[]} cards */
+    function saveCards(cards) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
+    }
+
+    /** @param {Card[]} cards */
+    function sortCards(cards) {
+      return [...cards].sort((a, b) => {
+        const statusDiff = (STATUS_RANK[a.status] ?? 0) - (STATUS_RANK[b.status] ?? 0);
+        if (statusDiff !== 0) return statusDiff;
+        return (b.updatedAt ?? 0) - (a.updatedAt ?? 0);
+      });
+    }
+
+    function renderNotesContent(container, text, placeholder = "—") {
+      container.innerHTML = "";
+      const fragment = document.createDocumentFragment();
+      const source = typeof text === "string" ? text : "";
+      const lines = source.split(/\r?\n/);
+      const blocks = [];
+      let current = null;
+
+      for (const line of lines) {
+        if (!line.trim()) {
+          current = null;
+          continue;
+        }
+        const listMatch = line.match(/^\s*[-*]\s+(.*)$/);
+        if (listMatch) {
+          if (!current || current.type !== "list") {
+            current = { type: "list", items: [] };
+            blocks.push(current);
+          }
+          current.items.push(listMatch[1]);
+        } else {
+          if (!current || current.type !== "paragraph") {
+            current = { type: "paragraph", lines: [] };
+            blocks.push(current);
+          }
+          current.lines.push(line.trimEnd());
+        }
+      }
+
+      blocks.forEach(block => {
+        if (block.type === "list") {
+          const ul = document.createElement("ul");
+          block.items.forEach(item => {
+            const li = document.createElement("li");
+            renderInline(li, item);
+            ul.appendChild(li);
+          });
+          fragment.appendChild(ul);
+        } else if (block.type === "paragraph") {
+          const p = document.createElement("p");
+          block.lines.forEach((line, index) => {
+            if (index > 0) {
+              p.appendChild(document.createElement("br"));
+            }
+            renderInline(p, line);
+          });
+          fragment.appendChild(p);
+        }
+      });
+
+      if (!fragment.childNodes.length) {
+        const p = document.createElement("p");
+        p.textContent = placeholder;
+        fragment.appendChild(p);
+      }
+
+      container.appendChild(fragment);
+    }
+
+    function renderInline(parent, text) {
+      const boldPattern = /\*\*([^*]+)\*\*/g;
+      let lastIndex = 0;
+      let match;
+      while ((match = boldPattern.exec(text)) !== null) {
+        if (match.index > lastIndex) {
+          parent.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+        }
+        const strong = document.createElement("strong");
+        strong.textContent = match[1];
+        parent.appendChild(strong);
+        lastIndex = match.index + match[0].length;
+      }
+      if (lastIndex < text.length) {
+        parent.appendChild(document.createTextNode(text.slice(lastIndex)));
+      }
+    }
+
+    function configureContentBlock(blockEl, contentEl, expandBtn, text, placeholder) {
+      renderNotesContent(contentEl, text, placeholder);
+      blockEl.dataset.expanded = "false";
+      blockEl.dataset.empty = text && text.trim().length ? "false" : "true";
+      expandBtn.textContent = "Show more";
+
+      const updateAvailability = () => {
+        requestAnimationFrame(() => {
+          const needsToggle = contentEl.scrollHeight > COLLAPSED_HEIGHT;
+          expandBtn.hidden = !needsToggle;
+          if (!needsToggle) {
+            blockEl.dataset.expanded = "false";
+            expandBtn.textContent = "Show more";
+          }
+        });
+      };
+
+      return updateAvailability;
+    }
+
+    function renderCards(filter = "all") {
+      const cards = sortCards(loadCards());
+      const list = document.getElementById("card-list");
+      list.innerHTML = "";
+      const template = document.getElementById("card-template");
+
+      cards
+        .filter(card => filter === "all" ? true : card.status === filter)
+        .forEach(card => {
+          const clone = template.content.cloneNode(true);
+          const root = clone.querySelector(".card");
+          root.dataset.cardId = card.id;
+
+          const handleEl = clone.querySelector("[data-handle]");
+          const titleEl = clone.querySelector("[data-title]");
+          const statusEl = clone.querySelector("[data-status]");
+          const toggleBtn = clone.querySelector("[data-toggle-edit]");
+          const notesBlock = clone.querySelector('[data-block="notes"]');
+          const notesEl = notesBlock.querySelector("[data-notes]");
+          const notesExpandBtn = notesBlock.querySelector('[data-toggle-expand="notes"]');
+          const notesInput = clone.querySelector("[data-notes-input]");
+          const cycleBtn = clone.querySelector("[data-cycle-status]");
+          const deleteBtn = clone.querySelector("[data-delete]");
+          const saveBtn = clone.querySelector("[data-save]");
+          const cancelBtn = clone.querySelector("[data-cancel]");
+
+          handleEl.textContent = card.handle;
+          titleEl.textContent = card.title;
+          statusEl.textContent = formatStatus(card.status);
+          statusEl.dataset.state = card.status;
+          notesInput.value = card.notes;
+
+          const updateNotesExpand = configureContentBlock(
+            notesBlock,
+            notesEl,
+            notesExpandBtn,
+            card.notes,
+            "No notes yet."
+          );
+
+          const setEditing = (isEditing) => {
+            if (isEditing) {
+              notesBlock.dataset.mode = "edit";
+              notesEl.hidden = true;
+              notesInput.hidden = false;
+              notesExpandBtn.hidden = true;
+              toggleBtn.hidden = true;
+              saveBtn.hidden = false;
+              cancelBtn.hidden = false;
+              notesInput.value = card.notes;
+              notesInput.focus();
+            } else {
+              notesBlock.dataset.mode = "view";
+              notesEl.hidden = false;
+              notesInput.hidden = true;
+              toggleBtn.hidden = false;
+              saveBtn.hidden = true;
+              cancelBtn.hidden = true;
+              notesBlock.dataset.expanded = "false";
+              notesExpandBtn.textContent = "Show more";
+              updateNotesExpand();
+            }
+          };
+
+          toggleBtn.addEventListener("click", () => {
+            setEditing(true);
+          });
+
+          cancelBtn.addEventListener("click", () => {
+            notesInput.value = card.notes;
+            setEditing(false);
+          });
+
+          saveBtn.addEventListener("click", () => {
+            const notesValue = notesInput.value.trim();
+            if (!notesValue) {
+              alert("Notes cannot be empty.");
+              return;
+            }
+            card.notes = notesValue;
+            renderNotesContent(notesEl, notesValue, "No notes yet.");
+            setEditing(false);
+            updateCard(card.id, { notes: notesValue });
+          });
+
+          notesExpandBtn.addEventListener("click", () => {
+            const expanded = notesBlock.dataset.expanded === "true";
+            notesBlock.dataset.expanded = expanded ? "false" : "true";
+            notesExpandBtn.textContent = expanded ? "Show more" : "Show less";
+          });
+
+          cycleBtn.addEventListener("click", () => {
+            const nextStatus = getNextStatus(card.status);
+            updateCard(card.id, { status: nextStatus });
+          });
+
+          deleteBtn.addEventListener("click", () => {
+            if (confirm("Delete this card?")) {
+              removeCard(card.id);
+            }
+          });
+
+          list.appendChild(clone);
+          setEditing(false);
+        });
+
+      if (!list.children.length) {
+        const empty = document.createElement("p");
+        empty.textContent = "No cards yet. Start by creating one on the left.";
+        empty.style.color = "#555";
+        list.appendChild(empty);
+      }
+    }
+
+    function formatStatus(status) {
+      switch (status) {
+        case "in-progress":
+          return "In Progress";
+        case "completed":
+          return "Completed";
+        default:
+          return "Draft";
+      }
+    }
+
+    /** @param {Partial<Card>} updates */
+    function updateCard(id, updates) {
+      const cards = loadCards();
+      const idx = cards.findIndex(card => card.id === id);
+      if (idx === -1) return;
+      cards[idx] = {
+        ...cards[idx],
+        ...updates,
+        updatedAt: Date.now(),
+      };
+      saveCards(cards);
+      renderCards(document.getElementById("filter-status").value);
+    }
+
+    function removeCard(id) {
+      const cards = loadCards().filter(card => card.id !== id);
+      saveCards(cards);
+      renderCards(document.getElementById("filter-status").value);
+    }
+
+    function getNextStatus(current) {
+      if (current === "draft") return "in-progress";
+      if (current === "in-progress") return "completed";
+      return "draft";
+    }
+
+    function handleFormSubmit(event) {
+      event.preventDefault();
+      const data = new FormData(event.target);
+      const card = {
+        id: crypto.randomUUID(),
+        handle: data.get("handle").trim(),
+        title: data.get("title").trim(),
+        status: data.get("status"),
+        notes: data.get("notes").trim(),
+        updatedAt: Date.now(),
+      };
+      if (!card.handle || !card.title || !card.notes) {
+        alert("Handle, headline, and notes are required.");
+        return;
+      }
+      const cards = loadCards();
+      cards.push(card);
+      saveCards(cards);
+      event.target.reset();
+      renderCards(document.getElementById("filter-status").value);
+    }
+
+    document.getElementById("card-form").addEventListener("submit", handleFormSubmit);
+    document.getElementById("filter-status").addEventListener("change", (event) => {
+      renderCards(event.target.value);
+    });
+
+    // Seed example card on first visit if storage empty.
+    if (!loadCards().length) {
+      saveCards([{
+        id: crypto.randomUUID(),
+        handle: "@lana_yaps",
+        title: "Launch weekly TikTok series",
+        status: "draft",
+        notes: "Brainstorm hook ideas\n\n**Outline:**\n- Hook the audience in the first 3 seconds\n- Highlight this week's theme\n- Close with a CTA",
+        updatedAt: Date.now(),
+      }]);
+    }
+
+    renderCards();
+  </script>
+</body>
+</html>
