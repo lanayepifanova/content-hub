@@ -95,19 +95,20 @@ Keep feature-specific files inside their module tree so modules stay isolated an
 - **Environment Variables**:
   - Copy `.env.example` → `.env`. Minimum keys: `DATABASE_URL=sqlite:///data/contenthub.db`, `OPENAI_API_KEY=` (optional offline).
   - Restart the server after editing `.env`.
-- **CLI Runner (`./ch`)**:
+- **CLI Runner (`./ch`, `ch.bat`, `ch.ps1`)**:
   - `./ch setup` – bootstrap venv, install deps, copy `.env`, run `init-db`.
   - `./ch runserver [--host 0.0.0.0 --port 8000]` – start FastAPI with reload.
   - `./ch init-db` – apply migrations/seeds.
   - `./ch create-admin`, `./ch create-invite` – user management helpers.
   - Any other args pass directly to `tools/dev.py`.
+  - Set `CH_AUTOMATION=1` when running `./ch runserver` in CI/headless environments to skip binding sockets.
 
 ---
 
 ## Running the App Locally
 
 1. `./ch setup`
-2. `./ch runserver --reload`
+2. `./ch runserver --reload` (use `CH_AUTOMATION=1 ./ch runserver ...` for headless smoke tests)
 3. Visit `http://127.0.0.1:8000` for the UI; `http://127.0.0.1:8000/docs` for OpenAPI.
 4. Verify module routes (e.g., `/ideas`, `/ai/suggest`) render without errors.
 
@@ -169,7 +170,7 @@ If the server fails to start, ensure `.venv` is active and dependencies are inst
 ## Support & Contacts
 
 - Planning issues → update `docs/plans/` and mention reviewers in PRs.
-- Tooling/CLI issues → open repo issue with OS/Python/version details and exact command output.
+- Tooling/CLI issues (`./ch`, `ch.bat`, `ch.ps1`) → open repo issue with OS/Python/version details and exact command output.
 - AI integration questions → document assumptions in planning docs or team chat before coding.
 
 ---

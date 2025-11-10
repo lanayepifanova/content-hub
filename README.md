@@ -20,6 +20,15 @@ ch.bat setup
 ch.bat runserver
 ```
 
+PowerShell:
+
+```powershell
+git clone <repo-url> content-hub
+cd content-hub
+.\ch.ps1 setup
+.\ch.ps1 runserver
+```
+
 Then open `http://127.0.0.1:8000` (UI) or `/docs` (OpenAPI). If Python ≥3.10 is missing, the wrappers print guidance.
 
 ## Project Structure
@@ -56,7 +65,8 @@ See `AI_PROJECT_GUIDE.md` for full layout, workflows, and standards.
 - **Missing Python**: Install Python 3.10+ (python.org, brew, pyenv). Wrappers provide guidance.
 - **Dependencies missing**: Re-run `./ch setup` to reinstall inside `.venv`.
 - **Server won’t start**: Ensure `.env` exists (`cp .env.example .env`) and database path `data/contenthub.db` is writable. Delete the DB if needed and run `./ch init-db`.
-- **Windows ExecutionPolicy issues**: Run `ch.bat` from CMD; optional PowerShell script will include ExecutionPolicy instructions.
+- **Automation/CI**: Set `CH_AUTOMATION=1` to let `./ch runserver` skip binding a port during headless smoke tests.
+- **Windows ExecutionPolicy issues**: Run `ch.bat` from CMD or execute `PowerShell -ExecutionPolicy Bypass -File ch.ps1 setup`.
 
 ## Documentation
 
