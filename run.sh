@@ -16,7 +16,7 @@ fi
 source "$VENV_DIR/bin/activate"
 
 pip install --upgrade pip >/dev/null
-pip install fastapi uvicorn sqlalchemy >/dev/null
+pip install fastapi uvicorn sqlalchemy jinja2 >/dev/null
 
 RELOAD_FLAG=""
 if [ "$RELOAD" = "true" ]; then

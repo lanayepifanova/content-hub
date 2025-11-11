@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ContentHub Idea Inbox</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Idea Inbox</h1>
+      <p>Capture quick hooks, keep them organized, and glance at the calendar.</p>
+      <form id="idea-form">
+        <input name="title" placeholder="Idea title / hook" required />
+        <textarea name="description" placeholder="Optional notes"></textarea>
+        <input name="target_date" type="date" />
+        <button type="submit">Add Idea</button>
+      </form>
+    </header>
+
+    <main>
+      <section class="board">
+        {% for status in statuses %}
+        <div class="column">
+          <h2>{{ status.value }}</h2>
+          {% if grouped[status] %}
+            {% for idea in grouped[status] %}
+              <div class="idea">
+                <strong>{{ idea.title }}</strong>
+                {% if idea.description %}
+                  <p>{{ idea.description }}</p>
+                {% endif %}
+                <small>Created {{ idea.created_at.strftime('%b %d, %Y') }}</small>
+                {% if idea.target_date %}
+                  <small>Target {{ idea.target_date.strftime('%b %d') }}</small>
+                {% endif %}
+                <div>
+                  {% for next_status in statuses %}
+                    {% if next_status != status %}
+                    <button data-move data-id="{{ idea.id }}" data-status="{{ next_status.value }}">
+                      {{ next_status.value }}
+                    </button>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <p>No ideas here yet.</p>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </section>
+
+      <section class="calendar">
+        <h2>Calendar</h2>
+        {% if calendar_items %}
+        <ul>
+          {% for day, ideas in calendar_items %}
+            <li>
+              <strong>{{ day.strftime('%A, %b %d') }}</strong>
+              <div>
+                {% for idea in ideas %}
+                  <span>{{ idea.title }} ({{ idea.status }})</span>{% if not loop.last %}, {% endif %}
+                {% endfor %}
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+          <p>Assign target dates to see them show up here.</p>
+        {% endif %}
+      </section>
+    </main>
+
+    <script>
+      const form = document.getElementById('idea-form');
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const formData = new FormData(form);
+        const payload = {
+          title: formData.get('title'),
+          description: formData.get('description') || null,
+          target_date: formData.get('target_date') || null,
+        };
+        const res = await fetch('/api/ideas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+          form.reset();
+          window.location.reload();
+        } else {
+          alert('Unable to save idea');
+        }
+      });
+
+      document.querySelectorAll('[data-move]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const ideaId = btn.dataset.id;
+          const status = btn.dataset.status;
+          const res = await fetch(`/api/ideas/${ideaId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status }),
+          });
+          if (res.ok) {
+            window.location.reload();
+          } else {
+            alert('Unable to update idea');
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
