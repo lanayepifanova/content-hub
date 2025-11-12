@@ -1,14 +1,16 @@
 # ContentHub Calendar
 
-Single-command workspace for planning video ideas directly on a visual calendar.
+Plan video ideas directly on a visual calendar, toggle completion, and keep track of scripts/notes in one place.
 
-## Run Everything
+---
+
+## Quickstart
 
 ```bash
 ./run.sh
 ```
 
-The wrapper handles `.venv` creation, dependency installs (`fastapi`, `uvicorn`, `sqlalchemy`, `jinja2`), and launches `uvicorn main:app --reload` on `http://127.0.0.1:8000`.
+The helper script bootstraps `.venv`, installs the editable project defined in `pyproject.toml`, and runs `uvicorn app.main:app --reload` on `http://127.0.0.1:8000`.
 
 Override defaults as needed:
 
@@ -16,23 +18,70 @@ Override defaults as needed:
 HOST=0.0.0.0 PORT=9000 RELOAD=false ./run.sh
 ```
 
+Manual install:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e .
+uvicorn app.main:app --reload
+```
+
+---
+
 ## Features
-- **Calendar-first workflow:** the homepage is a monthly grid. Each day tile lets you add hooks inline, view what’s scheduled, and tick the checkbox once it’s filmed/published.
-- **Quick data entry:** tap any day, type a sentence-long title, and hit `+`. Longer notes/scripts live on the dedicated edit page (`/ideas/{id}/edit`).
-- **Completion tracking:** checkboxes instantly toggle completion status, and completed ideas show as muted/struck-out so you know what’s done.
-- **Month navigation:** jump to previous/next months via the header nav or return to “Today” in one click.
-- **REST API:**
-  - `POST /api/ideas` – create `{title, target_date, description?}` for a specific day.
-  - `PATCH /api/ideas/{id}` – update title, description, or day.
-  - `POST /api/ideas/{id}/toggle` – flip the completion state (and timestamp) for quick check-offs.
-  - `DELETE /api/ideas/{id}` – remove an entry.
-  - `GET /api/calendar?year=&month=` – returns all ideas in the rendered range (for future integrations or exports).
+- Calendar-first workflow with 42-day grid and “Today” highlighting.
+- Inline form per day for ultra-fast idea capture.
+- Edit page for longer notes, script drafts, date changes, and completion toggles.
+- REST API for CRUD + calendar exports (`/api/ideas`, `/api/calendar`).
+- SQLite-backed persistence (auto-created `contenthub.db`).
+
+---
+
+## Project Layout
+
+```
+app/
+├── config.py          # Paths + shared settings
+├── database.py        # SQLAlchemy engine/session helpers
+├── models.py          # ORM models
+├── routers/           # HTML + API endpoints
+├── schemas.py         # Pydantic contracts
+├── services.py        # Domain helpers (fetch/toggle/query ideas)
+├── lib/calendar.py    # Calendar math + grouping helpers
+├── static/            # CSS / assets served via FastAPI
+└── templates/         # Jinja2 views (calendar + edit)
+run.sh                 # One-command dev server bootstrap
+pyproject.toml         # Dependencies + tooling config
+```
+
+---
+
+## Testing & Tooling
+
+Install dev extras and run pytest:
+
+```bash
+pip install -e ".[dev]"
+pytest
+```
+
+Format/lint (Ruff):
+
+```bash
+ruff check .
+```
+
+---
 
 ## UI Quick Tour
-1. Visit `http://127.0.0.1:8000`. The current month loads automatically; navigate via the arrows when needed.
-2. Hover any day tile, type a title in the “Add idea” field, and press `+` to schedule it.
-3. Click a checkbox to mark it complete (or uncheck to reopen it). Use the tiny **Edit** link for longer notes or date adjustments.
-4. Delete ideas inline if you change plans—the calendar updates on refresh.
+1. Visit `http://127.0.0.1:8000` to load the current month. Use the arrows for previous/next months or jump back to “Today”.
+2. Hover any day tile, type a hook in “Add idea”, hit `+` to schedule it.
+3. Toggle completion via the checkbox; edit or delete ideas inline.
+4. Open the **Edit** link for richer notes or to mark completion with a timestamp.
+
+---
 
 ## Resetting the Database
-The app stores data in `contenthub.db` (SQLite). Delete that file if you want a clean slate; it will be recreated automatically on the next run. Because the calendar redesign introduces new columns (`completed`, `completed_at`), remove `contenthub.db` once if it was created previously.
+
+Delete `contenthub.db` if you want a clean slate. The file is recreated on the next run with the latest schema (including `completed` + `completed_at` columns).

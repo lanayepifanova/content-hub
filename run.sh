@@ -16,7 +16,7 @@ fi
 source "$VENV_DIR/bin/activate"
 
 pip install --upgrade pip >/dev/null
-pip install fastapi uvicorn sqlalchemy jinja2 >/dev/null
+pip install -e . >/dev/null
 
 RELOAD_FLAG=""
 if [ "$RELOAD" = "true" ]; then
@@ -24,4 +24,4 @@ if [ "$RELOAD" = "true" ]; then
 fi
 
 echo "[run] starting uvicorn on http://$HOST:$PORT (reload=$RELOAD)"
-exec uvicorn main:app --host "$HOST" --port "$PORT" $RELOAD_FLAG
+exec uvicorn app.main:app --host "$HOST" --port "$PORT" $RELOAD_FLAG
