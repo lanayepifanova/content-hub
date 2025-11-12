@@ -43,6 +43,10 @@
                     {% endif %}
                   {% endfor %}
                 </div>
+                <div class="idea-actions">
+                  <a class="link-button" href="/ideas/{{ idea.id }}/edit">Edit</a>
+                  <button data-delete data-id="{{ idea.id }}" class="danger">Delete</button>
+                </div>
               </div>
             {% endfor %}
           {% else %}
@@ -109,6 +113,23 @@
             window.location.reload();
           } else {
             alert('Unable to update idea');
+          }
+        });
+      });
+
+      document.querySelectorAll('[data-delete]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const ideaId = btn.dataset.id;
+          if (!confirm('Delete this idea?')) {
+            return;
+          }
+          const res = await fetch(`/api/ideas/${ideaId}`, {
+            method: 'DELETE',
+          });
+          if (res.ok) {
+            window.location.reload();
+          } else {
+            alert('Unable to delete idea');
           }
         });
       });

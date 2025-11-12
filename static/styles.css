@@ -97,6 +97,30 @@ form#idea-form button {
   cursor: pointer;
 }
 
+.idea button.danger {
+  background: #f97373;
+  color: #fff;
+}
+
+.idea a.link-button {
+  display: inline-block;
+  margin-top: 0.6rem;
+  margin-right: 0.4rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid #1d64f2;
+  color: #1d64f2;
+  text-decoration: none;
+  font-size: 0.8rem;
+}
+
+.idea-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
 .calendar {
   margin-top: 3rem;
   background: #ffffff;
