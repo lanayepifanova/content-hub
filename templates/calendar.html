@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ContentHub Calendar</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">{{ current_label }}</p>
+        <h1>Content Calendar</h1>
+        <p class="subtitle">Drop video hooks on the days you plan to publish and check them off once recorded.</p>
+      </div>
+      <nav class="month-nav">
+        <a href="/?year={{ previous[0] }}&month={{ previous[1] }}" aria-label="Previous month">← {{ previous_label }}</a>
+        <a class="today-link" href="/">Today</a>
+        <a href="/?year={{ next[0] }}&month={{ next[1] }}" aria-label="Next month">{{ next_label }} →</a>
+      </nav>
+    </header>
+
+    <main>
+      <div class="calendar-grid">
+        <div class="weekday">Mon</div>
+        <div class="weekday">Tue</div>
+        <div class="weekday">Wed</div>
+        <div class="weekday">Thu</div>
+        <div class="weekday">Fri</div>
+        <div class="weekday">Sat</div>
+        <div class="weekday">Sun</div>
+        {% for week in weeks %}
+          {% for day in week %}
+            {% set ideas = ideas_by_day.get(day, []) %}
+            <section class="day-card {% if day.month != current_month %}muted{% endif %} {% if day == today %}today{% endif %}" data-date="{{ day.isoformat() }}">
+              <header class="day-head">
+                <span class="day-number">{{ day.day }}</span>
+                {% if day == today %}<span class="pill">Today</span>{% endif %}
+              </header>
+              <ul class="ideas">
+                {% for idea in ideas %}
+                  <li class="idea-row">
+                    <label>
+                      <input type="checkbox" data-toggle="{{ idea.id }}" {% if idea.completed %}checked{% endif %} />
+                      <span class="idea-text {% if idea.completed %}done{% endif %}">{{ idea.title }}</span>
+                    </label>
+                    <div class="row-actions">
+                      <a href="/ideas/{{ idea.id }}/edit" class="tiny-link">Edit</a>
+                      <button data-delete="{{ idea.id }}" aria-label="Delete idea">×</button>
+                    </div>
+                  </li>
+                {% endfor %}
+              </ul>
+              <form class="day-form" data-day-form>
+                <input name="title" placeholder="Add idea" autocomplete="off" />
+                <button type="submit">+</button>
+              </form>
+            </section>
+          {% endfor %}
+        {% endfor %}
+      </div>
+    </main>
+
+    <script>
+      document.querySelectorAll('[data-day-form]').forEach((form) => {
+        form.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          const container = form.closest('[data-date]');
+          const title = form.elements.title.value.trim();
+          if (!title) return;
+          const payload = { title, target_date: container.dataset.date };
+          const res = await fetch('/api/ideas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          if (res.ok) {
+            form.reset();
+            window.location.reload();
+          } else {
+            alert('Unable to add idea');
+          }
+        });
+      });
+
+      document.querySelectorAll('[data-toggle]').forEach((checkbox) => {
+        checkbox.addEventListener('change', async () => {
+          const id = checkbox.dataset.toggle;
+          const res = await fetch(`/api/ideas/${id}/toggle`, { method: 'POST' });
+          if (!res.ok) {
+            alert('Unable to update idea');
+            checkbox.checked = !checkbox.checked;
+          }
+        });
+      });
+
+      document.querySelectorAll('[data-delete]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          if (!confirm('Delete this idea?')) return;
+          const id = button.dataset.delete;
+          const res = await fetch(`/api/ideas/${id}`, { method: 'DELETE' });
+          if (res.ok) {
+            window.location.reload();
+          } else {
+            alert('Unable to delete idea');
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

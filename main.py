@@ -1,33 +1,60 @@
-"""ContentHub Idea Inbox – FastAPI + SQLAlchemy + Jinja templates."""
+"""ContentHub Calendar – FastAPI app for day-based video planning."""
 
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
-from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from database import Base, engine, get_db
-from models import Idea, IdeaStatus
+from models import Idea
 
 STATIC_DIR = Path("static")
 TEMPLATE_DIR = Path("templates")
 STATIC_DIR.mkdir(exist_ok=True)
 TEMPLATE_DIR.mkdir(exist_ok=True)
 
-app = FastAPI(title="ContentHub Idea Inbox", version="0.2.0")
+app = FastAPI(title="ContentHub Calendar", version="0.3.0")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATE_DIR))
 
 Base.metadata.create_all(bind=engine)
 
-STATUSES = [IdeaStatus.BACKLOG, IdeaStatus.DRAFTING, IdeaStatus.SCHEDULED, IdeaStatus.PUBLISHED]
+
+class IdeaCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200)
+    target_date: date
+    description: str | None = Field(default=None, max_length=2000)
+
+
+class IdeaUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=200)
+    target_date: date | None = None
+    description: str | None = Field(default=None, max_length=2000)
+
+
+class IdeaRead(BaseModel):
+    id: int
+    title: str
+    description: str | None
+    target_date: date
+    created_at: datetime
+    completed: bool
+    completed_at: datetime | None
+
+    class Config:
+        from_attributes = True
+
+
+class TogglePayload(BaseModel):
+    completed: bool | None = None
 
 
 def fetch_idea(db: Session, idea_id: int) -> Idea:
@@ -37,64 +64,100 @@ def fetch_idea(db: Session, idea_id: int) -> Idea:
     return idea
 
 
-class IdeaCreate(BaseModel):
-    title: str = Field(..., min_length=1, max_length=200)
-    description: str | None = Field(default=None, max_length=2000)
-    target_date: date | None = None
+def month_context(year: int, month: int) -> dict:
+    first_day = date(year, month, 1)
+    start = first_day - timedelta(days=first_day.weekday())
+    days = [start + timedelta(days=i) for i in range(42)]
+    weeks = [days[i : i + 7] for i in range(0, 42, 7)]
+    last_day = days[-1]
 
+    prev_month_anchor = first_day - timedelta(days=1)
+    next_month_anchor = last_day + timedelta(days=1)
 
-class IdeaRead(BaseModel):
-    id: int
-    title: str
-    description: str | None
-    status: IdeaStatus
-    created_at: datetime
-    target_date: date | None
-
-    class Config:
-        from_attributes = True
-
-
-class IdeaStatusUpdate(BaseModel):
-    status: IdeaStatus
-
-
-class IdeaUpdate(BaseModel):
-    title: str | None = Field(default=None, min_length=1, max_length=200)
-    description: str | None = Field(default=None, max_length=2000)
-    target_date: date | None = None
-    status: IdeaStatus | None = None
+    return {
+        "weeks": weeks,
+        "range_start": days[0],
+        "range_end": days[-1],
+        "current_month": month,
+        "current_year": year,
+        "previous": (prev_month_anchor.year, prev_month_anchor.month),
+        "next": (next_month_anchor.year, next_month_anchor.month),
+        "current_label": first_day.strftime("%B %Y"),
+        "previous_label": date(prev_month_anchor.year, prev_month_anchor.month, 1).strftime("%b"),
+        "next_label": date(next_month_anchor.year, next_month_anchor.month, 1).strftime("%b"),
+    }
 
 
 @app.get("/", response_class=HTMLResponse)
-@app.get("/inbox", response_class=HTMLResponse)
-def inbox_page(request: Request, db: Session = Depends(get_db)):
-    ideas = db.query(Idea).order_by(Idea.created_at.desc()).all()
-    grouped: dict[IdeaStatus, list[Idea]] = {status: [] for status in STATUSES}
-    for idea in ideas:
-        grouped[IdeaStatus(idea.status)].append(idea)
+def calendar_page(
+    request: Request,
+    year: int | None = None,
+    month: int | None = None,
+    db: Session = Depends(get_db),
+):
+    today = date.today()
+    year = year or today.year
+    month = month or today.month
 
-    calendar_map: dict[date, list[Idea]] = defaultdict(list)
+    ctx = month_context(year, month)
+    weeks = ctx["weeks"]
+    start = ctx["range_start"]
+    end = ctx["range_end"]
+
+    ideas = (
+        db.query(Idea)
+        .filter(Idea.target_date >= start, Idea.target_date <= end)
+        .order_by(Idea.target_date.asc(), Idea.created_at.asc())
+        .all()
+    )
+    ideas_by_day: dict[date, list[Idea]] = defaultdict(list)
     for idea in ideas:
-        if idea.target_date:
-            calendar_map[idea.target_date].append(idea)
-    calendar_items = sorted(calendar_map.items(), key=lambda pair: pair[0])
+        ideas_by_day[idea.target_date].append(idea)
 
     return templates.TemplateResponse(
-        "inbox.html",
+        "calendar.html",
         {
             "request": request,
-            "statuses": STATUSES,
-            "grouped": grouped,
-            "calendar_items": calendar_items,
+            "weeks": weeks,
+            "ideas_by_day": ideas_by_day,
+            "today": today,
+            "current_month": ctx["current_month"],
+            "current_year": ctx["current_year"],
+            "previous": ctx["previous"],
+            "next": ctx["next"],
+            "current_label": ctx["current_label"],
+            "previous_label": ctx["previous_label"],
+            "next_label": ctx["next_label"],
         },
     )
 
 
-@app.get("/api/ideas", response_model=list[IdeaRead])
-def list_ideas(db: Session = Depends(get_db)):
-    ideas = db.query(Idea).order_by(Idea.created_at.desc()).all()
-    return [IdeaRead.from_orm(idea) for idea in ideas]
+@app.get("/ideas/{idea_id}/edit", response_class=HTMLResponse)
+def edit_page(request: Request, idea_id: int, db: Session = Depends(get_db)):
+    idea = fetch_idea(db, idea_id)
+    return templates.TemplateResponse(
+        "edit.html",
+        {"request": request, "idea": idea},
+    )
+
+
+@app.post("/ideas/{idea_id}/edit", response_class=HTMLResponse)
+async def edit_submit(request: Request, idea_id: int, db: Session = Depends(get_db)):
+    idea = fetch_idea(db, idea_id)
+    form = await request.form()
+    title = (form.get("title") or "").strip()
+    if not title:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Title is required")
+    idea.title = title
+    idea.description = form.get("description") or None
+    target = form.get("target_date")
+    if target:
+        idea.target_date = date.fromisoformat(target)
+    completed = form.get("completed") == "on"
+    idea.completed = completed
+    idea.completed_at = datetime.utcnow() if completed else None
+    db.commit()
+    return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @app.post("/api/ideas", response_model=IdeaRead, status_code=status.HTTP_201_CREATED)
@@ -110,30 +173,27 @@ def create_idea(payload: IdeaCreate, db: Session = Depends(get_db)):
 
 
 @app.patch("/api/ideas/{idea_id}", response_model=IdeaRead)
-def update_idea_status(idea_id: int, payload: IdeaStatusUpdate, db: Session = Depends(get_db)):
-    idea = fetch_idea(db, idea_id)
-    idea.status = payload.status
-    db.commit()
-    db.refresh(idea)
-    return IdeaRead.from_orm(idea)
-
-
-@app.put("/api/ideas/{idea_id}", response_model=IdeaRead)
-def update_idea(idea_id: int, payload: IdeaUpdate, db: Session = Depends(get_db)):
+def patch_idea(idea_id: int, payload: IdeaUpdate, db: Session = Depends(get_db)):
     idea = fetch_idea(db, idea_id)
     if payload.title is not None:
         cleaned = payload.title.strip()
         if not cleaned:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Title cannot be empty")
         idea.title = cleaned
-    if "description" in payload.model_fields_set:
+    if payload.description is not None:
         idea.description = payload.description
     if payload.target_date is not None:
         idea.target_date = payload.target_date
-    elif "target_date" in payload.model_fields_set:
-        idea.target_date = None
-    if payload.status is not None:
-        idea.status = payload.status
+    db.commit()
+    db.refresh(idea)
+    return IdeaRead.from_orm(idea)
+
+
+@app.post("/api/ideas/{idea_id}/toggle", response_model=IdeaRead)
+def toggle_idea(idea_id: int, db: Session = Depends(get_db)):
+    idea = fetch_idea(db, idea_id)
+    idea.completed = not idea.completed
+    idea.completed_at = datetime.utcnow() if idea.completed else None
     db.commit()
     db.refresh(idea)
     return IdeaRead.from_orm(idea)
@@ -144,47 +204,21 @@ def delete_idea(idea_id: int, db: Session = Depends(get_db)):
     idea = fetch_idea(db, idea_id)
     db.delete(idea)
     db.commit()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    return None
 
 
 @app.get("/api/calendar")
-def calendar_feed(db: Session = Depends(get_db)):
-    ideas = db.query(Idea).filter(Idea.target_date.isnot(None)).all()
-    calendar: dict[str, list[dict[str, str]]] = {}
-    for idea in ideas:
-        key = idea.target_date.isoformat()
-        calendar.setdefault(key, []).append({"id": idea.id, "title": idea.title, "status": idea.status})
-    return calendar
-
-
-@app.get("/ideas/{idea_id}/edit", response_class=HTMLResponse)
-def edit_idea_page(request: Request, idea_id: int, db: Session = Depends(get_db)):
-    idea = fetch_idea(db, idea_id)
-    return templates.TemplateResponse(
-        "edit.html",
-        {"request": request, "idea": idea, "statuses": STATUSES},
+def calendar_api(year: int | None = None, month: int | None = None, db: Session = Depends(get_db)):
+    today = date.today()
+    year = year or today.year
+    month = month or today.month
+    ctx = month_context(year, month)
+    start = ctx["range_start"]
+    end = ctx["range_end"]
+    ideas = (
+        db.query(Idea)
+        .filter(Idea.target_date >= start, Idea.target_date <= end)
+        .order_by(Idea.target_date.asc(), Idea.created_at.asc())
+        .all()
     )
-
-
-@app.post("/ideas/{idea_id}/edit", response_class=HTMLResponse)
-async def edit_idea_submit(request: Request, idea_id: int, db: Session = Depends(get_db)):
-    idea = fetch_idea(db, idea_id)
-    form = await request.form()
-    title = (form.get("title") or "").strip()
-    if not title:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Title is required")
-    idea.title = title
-    idea.description = form.get("description") or None
-    target_date_raw = form.get("target_date") or None
-    if target_date_raw:
-        try:
-            idea.target_date = date.fromisoformat(target_date_raw)
-        except ValueError as exc:  # defensive against malformed input
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid date") from exc
-    else:
-        idea.target_date = None
-    status_value = form.get("status")
-    if status_value:
-        idea.status = IdeaStatus(status_value)
-    db.commit()
-    return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+    return [IdeaRead.from_orm(idea) for idea in ideas]

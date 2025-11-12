@@ -1,149 +1,219 @@
 :root {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  color: #1a1a1a;
-  background-color: #f8f8f8;
+  color-scheme: light;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #f4f6fb;
+  color: #111827;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  padding: 0;
-  background: #f8f8f8;
+  background: #f4f6fb;
 }
 
-header {
-  padding: 1.5rem;
-  background: #ffffff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-  position: sticky;
-  top: 0;
-  z-index: 10;
+.page-header {
+  padding: 2rem clamp(1rem, 5vw, 3rem);
+  background: linear-gradient(135deg, #eef3ff 0%, #fdf7ff 80%);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  color: #6b7280;
+  margin: 0 0 0.5rem;
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+}
+
+.subtitle {
+  margin: 0.4rem 0 0;
+  color: #4b5563;
+}
+
+.month-nav {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.month-nav a {
+  text-decoration: none;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid #d8defa;
+  color: #1d4ed8;
+  font-weight: 500;
+  background: #fff;
+}
+
+.month-nav .today-link {
+  background: #1d4ed8;
+  color: #fff;
 }
 
 main {
-  padding: 1.5rem;
   max-width: 1200px;
-  margin: auto;
+  margin: 0 auto;
+  padding: 2rem clamp(1rem, 5vw, 2rem);
 }
 
-h1 {
-  margin: 0;
-  font-size: 1.8rem;
-}
-
-form#idea-form {
+.calendar-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1rem;
-  margin-top: 1rem;
+  grid-template-columns: repeat(7, minmax(120px, 1fr));
+  gap: 0.75rem;
 }
 
-form#idea-form input,
-form#idea-form textarea,
-form#idea-form button {
-  padding: 0.6rem;
-  border-radius: 8px;
-  border: 1px solid #dcdcdc;
-  font-size: 0.95rem;
-}
-
-form#idea-form button {
-  background: #1d64f2;
-  color: #fff;
-  border: none;
-  cursor: pointer;
-}
-
-.board {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1rem;
-  margin-top: 2rem;
-}
-
-.column {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 1rem;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-  min-height: 200px;
-}
-
-.column h2 {
-  margin-top: 0;
-  font-size: 1.1rem;
-  text-transform: capitalize;
-}
-
-.idea {
-  background: #f4f7ff;
-  border-radius: 10px;
-  padding: 0.8rem;
-  margin-bottom: 0.8rem;
-}
-
-.idea small {
-  display: block;
+.weekday {
+  font-size: 0.85rem;
+  font-weight: 600;
   color: #6b7280;
-  margin-top: 0.4rem;
+  text-transform: uppercase;
 }
 
-.idea button {
-  margin-top: 0.5rem;
-  margin-right: 0.4rem;
+.day-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 0.85rem;
+  min-height: 160px;
+  box-shadow: 0 10px 35px rgba(15, 23, 42, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  border: 1px solid transparent;
+  overflow: hidden;
+}
+
+.day-card.today {
+  border-color: #2563eb;
+}
+
+.day-card.muted {
+  opacity: 0.45;
+}
+
+.day-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.day-number {
+  font-weight: 600;
+}
+
+.pill {
+  font-size: 0.65rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.1);
+  color: #1d4ed8;
+}
+
+.ideas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-height: 120px;
+  overflow-y: auto;
+  padding-right: 0.2rem;
+  flex: 1 1 auto;
+}
+
+.idea-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  align-items: center;
+}
+
+.idea-row label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 1;
+}
+
+.idea-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.idea-text.done {
+  text-decoration: line-through;
+  color: #94a3b8;
+}
+
+.row-actions {
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+.tiny-link {
+  font-size: 0.75rem;
+  color: #6d28d9;
+  text-decoration: none;
+}
+
+.row-actions button {
+  background: transparent;
   border: none;
-  border-radius: 6px;
-  padding: 0.35rem 0.6rem;
-  font-size: 0.8rem;
+  color: #f43f5e;
+  font-size: 1rem;
   cursor: pointer;
 }
 
-.idea button.danger {
-  background: #f97373;
-  color: #fff;
-}
-
-.idea a.link-button {
-  display: inline-block;
-  margin-top: 0.6rem;
-  margin-right: 0.4rem;
-  padding: 0.35rem 0.6rem;
-  border-radius: 6px;
-  border: 1px solid #1d64f2;
-  color: #1d64f2;
-  text-decoration: none;
-  font-size: 0.8rem;
-}
-
-.idea-actions {
+.day-form {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-top: 0.5rem;
+  gap: 0.35rem;
+  width: 85%;
+  margin-top: auto;
+  justify-content: flex-start;
+  align-items: center;
 }
 
-.calendar {
-  margin-top: 3rem;
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 1rem;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+.day-form input {
+  border-radius: 999px;
+  border: 1px solid #d9e0ff;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.8rem;
+  flex: 0 0 65%;
+  min-width: 0;
 }
 
-.calendar h2 {
-  margin-top: 0;
+.day-form button {
+  border: none;
+  background: #1d4ed8;
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.3rem 0.55rem;
+  cursor: pointer;
+  flex: 0 0 auto;
 }
 
-.calendar ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
+@media (max-width: 900px) {
+  .calendar-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 
-.calendar li {
-  padding: 0.6rem 0;
-  border-bottom: 1px solid #eeeeee;
-}
-
-.calendar li:last-child {
-  border-bottom: none;
+  .weekday {
+    display: none;
+  }
 }
