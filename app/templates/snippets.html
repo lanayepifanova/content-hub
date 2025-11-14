@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Snippet Library</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <style>
+      body {
+        background: #f4f6fb;
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        margin: 0;
+        color: #0f172a;
+      }
+      header {
+        padding: 2rem clamp(1rem, 5vw, 4rem);
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(236, 72, 153, 0.12));
+        color: #111827;
+      }
+      header h1 {
+        margin: 0;
+        font-size: clamp(2rem, 4vw, 2.75rem);
+      }
+      header p {
+        max-width: 620px;
+        color: #1f2937;
+      }
+      .container {
+        max-width: 1100px;
+        margin: -2rem auto 4rem;
+        padding: 0 1.5rem;
+      }
+      .library {
+        background: #fff;
+        border-radius: 28px;
+        box-shadow: 0 25px 60px rgba(15, 23, 42, 0.08);
+        padding: 2rem;
+      }
+      .toolbar {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+      }
+      .toolbar select,
+      .toolbar button,
+      .toolbar input {
+        border-radius: 999px;
+        border: 1px solid #d1d9ff;
+        padding: 0.5rem 1rem;
+        font-family: inherit;
+        background: #fff;
+      }
+      .toolbar button {
+        background: #1d4ed8;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+      }
+      .category-section {
+        margin-bottom: 2rem;
+      }
+      .category-section h2 {
+        font-size: 1.2rem;
+        margin-bottom: 0.75rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .snippet-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1rem;
+      }
+      .snippet-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        background: #fdfdff;
+      }
+      .snippet-card header {
+        background: transparent;
+        padding: 0;
+      }
+      .snippet-card h3 {
+        margin: 0;
+        font-size: 1rem;
+      }
+      .snippet-card p {
+        margin: 0;
+        font-size: 0.9rem;
+        color: #475569;
+      }
+      .snippet-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+      .snippet-actions button {
+        border: none;
+        border-radius: 999px;
+        padding: 0.35rem 0.85rem;
+        font-size: 0.85rem;
+        cursor: pointer;
+      }
+      .snippet-actions .favorite {
+        background: #fef3c7;
+        color: #92400e;
+      }
+      .snippet-actions .copy {
+        background: #e0e7ff;
+        color: #312e81;
+      }
+      .rating {
+        display: flex;
+        gap: 0.15rem;
+        font-size: 1rem;
+      }
+      .rating button {
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        color: #fbbf24;
+        font-size: 1.2rem;
+      }
+      .rating span {
+        font-size: 0.8rem;
+        color: #64748b;
+      }
+      .new-snippet {
+        border: 1px dashed #c7d2fe;
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-top: 2rem;
+        background: #f8faff;
+      }
+      .new-snippet h3 {
+        margin-top: 0;
+      }
+      .new-snippet form {
+        display: grid;
+        gap: 0.8rem;
+      }
+      .new-snippet input,
+      .new-snippet textarea,
+      .new-snippet select {
+        border: 1px solid #d1d9ff;
+        border-radius: 12px;
+        padding: 0.65rem 0.85rem;
+        font-family: inherit;
+      }
+      .new-snippet button {
+        justify-self: start;
+        border: none;
+        border-radius: 999px;
+        background: #1d4ed8;
+        color: #fff;
+        padding: 0.6rem 1.3rem;
+        cursor: pointer;
+      }
+      @media (max-width: 640px) {
+        .snippet-actions {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <a href="/" style="color: #111827; text-decoration: none;">← Back to calendar</a>
+      <h1>Snippet Library</h1>
+      <p>Browse ready-to-use hook formulas, intro scripts, CTAs, and DM prompts. Favorite high performers and rate what resonates so the team can drop the best lines into new ideas faster.</p>
+    </header>
+
+    <div class="container">
+      <section class="library">
+        <div class="toolbar">
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <select id="category-filter">
+              <option value="all">All categories</option>
+              <option value="Hook">Hooks</option>
+              <option value="Intro">Intros</option>
+              <option value="CTA">CTAs</option>
+            </select>
+            <select id="sort-filter">
+              <option value="favorite">Favorites first</option>
+              <option value="rating">Highest rated</option>
+              <option value="recent">Recently added</option>
+            </select>
+          </div>
+          <button id="refresh-library" type="button">Refresh Library</button>
+        </div>
+        <div id="library-content"></div>
+
+        <section class="new-snippet">
+          <h3>Add a new snippet</h3>
+          <form id="new-snippet-form">
+            <input type="text" name="name" placeholder="Title (e.g., Pattern interrupt hook)" required />
+            <select name="category">
+              <option value="">Uncategorized</option>
+              <option value="Hook">Hook</option>
+              <option value="Intro">Intro</option>
+              <option value="CTA">CTA</option>
+            </select>
+            <textarea name="body" rows="3" placeholder="Script body" required></textarea>
+            <button type="submit">Save snippet</button>
+          </form>
+          <div id="new-snippet-feedback" style="margin-top: 0.5rem; font-size: 0.9rem;"></div>
+        </section>
+      </section>
+    </div>
+
+    <script>
+      const state = {
+        templates: [],
+        filter: "all",
+        sort: "favorite",
+      };
+
+      const libraryEl = document.getElementById("library-content");
+      const filterEl = document.getElementById("category-filter");
+      const sortEl = document.getElementById("sort-filter");
+      const refreshBtn = document.getElementById("refresh-library");
+      const form = document.getElementById("new-snippet-form");
+      const feedback = document.getElementById("new-snippet-feedback");
+
+      function templateAverage(template) {
+        if (!template.rating_count || template.rating_count === 0 || template.rating == null) return null;
+        return template.rating;
+      }
+
+      function formatCategory(category) {
+        return category || "Uncategorized";
+      }
+
+      function applyFilters() {
+        let filtered = [...state.templates];
+        if (state.filter !== "all") {
+          filtered = filtered.filter((tpl) => formatCategory(tpl.category) === state.filter || tpl.category === state.filter);
+        }
+        switch (state.sort) {
+          case "favorite":
+            filtered.sort((a, b) => Number(b.favorite) - Number(a.favorite) || (templateAverage(b) || 0) - (templateAverage(a) || 0));
+            break;
+          case "rating":
+            filtered.sort((a, b) => (templateAverage(b) || 0) - (templateAverage(a) || 0));
+            break;
+          case "recent":
+            filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            break;
+          default:
+            break;
+        }
+        return filtered;
+      }
+
+      function groupByCategory(templates) {
+        return templates.reduce((acc, tpl) => {
+          const key = formatCategory(tpl.category);
+          acc[key] = acc[key] || [];
+          acc[key].push(tpl);
+          return acc;
+        }, {});
+      }
+
+      function createRatingStars(template) {
+        const container = document.createElement("div");
+        container.className = "rating";
+        for (let i = 1; i <= 5; i += 1) {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.dataset.rating = String(i);
+          btn.dataset.templateId = template.id;
+          btn.textContent = i <= Math.round(templateAverage(template) || 0) ? "★" : "☆";
+          btn.addEventListener("click", () => submitRating(template.id, i));
+          container.appendChild(btn);
+        }
+        const summary = document.createElement("span");
+        const avg = templateAverage(template);
+        summary.textContent = avg ? `${avg.toFixed(1)} (${template.rating_count})` : "No ratings yet";
+        container.appendChild(summary);
+        return container;
+      }
+
+      function renderLibrary() {
+        const templates = applyFilters();
+        const groups = groupByCategory(templates);
+        libraryEl.innerHTML = "";
+        if (!templates.length) {
+          libraryEl.innerHTML = '<p style="color:#6b7280;">No snippets match this filter yet.</p>';
+          return;
+        }
+        Object.entries(groups).forEach(([category, items]) => {
+          const section = document.createElement("section");
+          section.className = "category-section";
+          section.innerHTML = `<h2>${category} <small style="font-size:0.85rem;color:#94a3b8;">${items.length}</small></h2>`;
+          const grid = document.createElement("div");
+          grid.className = "snippet-grid";
+          items.forEach((tpl) => {
+            const card = document.createElement("article");
+            card.className = "snippet-card";
+            card.innerHTML = `
+              <header>
+                <h3>${tpl.name}</h3>
+              </header>
+              <p>${tpl.body}</p>
+            `;
+            const actions = document.createElement("div");
+            actions.className = "snippet-actions";
+            const favBtn = document.createElement("button");
+            favBtn.className = "favorite";
+            favBtn.textContent = tpl.favorite ? "★ Favorited" : "☆ Favorite";
+            favBtn.addEventListener("click", () => toggleFavorite(tpl.id, !tpl.favorite));
+            const copyBtn = document.createElement("button");
+            copyBtn.className = "copy";
+            copyBtn.textContent = "Copy";
+            copyBtn.addEventListener("click", async () => {
+              await navigator.clipboard.writeText(tpl.body);
+              copyBtn.textContent = "Copied!";
+              setTimeout(() => {
+                copyBtn.textContent = "Copy";
+              }, 1200);
+            });
+            actions.appendChild(favBtn);
+            actions.appendChild(copyBtn);
+            card.appendChild(actions);
+            card.appendChild(createRatingStars(tpl));
+            grid.appendChild(card);
+          });
+          section.appendChild(grid);
+          libraryEl.appendChild(section);
+        });
+      }
+
+      async function fetchTemplates() {
+        const res = await fetch("/api/templates");
+        if (!res.ok) throw new Error("Unable to load templates");
+        state.templates = await res.json();
+        renderLibrary();
+      }
+
+      async function toggleFavorite(id, favorite) {
+        const res = await fetch(`/api/templates/${id}/favorite`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ favorite }),
+        });
+        if (!res.ok) {
+          alert("Unable to update favorite");
+          return;
+        }
+        await fetchTemplates();
+      }
+
+      async function submitRating(id, rating) {
+        const res = await fetch(`/api/templates/${id}/ratings`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ rating }),
+        });
+        if (!res.ok) {
+          alert("Unable to save rating");
+          return;
+        }
+        await fetchTemplates();
+      }
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const data = new FormData(form);
+        const payload = {
+          name: data.get("name"),
+          body: data.get("body"),
+          category: data.get("category") || null,
+        };
+        feedback.textContent = "Saving…";
+        try {
+          const res = await fetch("/api/templates", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          if (!res.ok) throw new Error("Unable to save");
+          form.reset();
+          feedback.textContent = "Snippet added!";
+          await fetchTemplates();
+        } catch (error) {
+          console.error(error);
+          feedback.textContent = "Failed to save snippet.";
+        } finally {
+          setTimeout(() => {
+            feedback.textContent = "";
+          }, 2000);
+        }
+      });
+
+      filterEl.addEventListener("change", (event) => {
+        state.filter = event.target.value;
+        renderLibrary();
+      });
+      sortEl.addEventListener("change", (event) => {
+        state.sort = event.target.value;
+        renderLibrary();
+      });
+      refreshBtn.addEventListener("click", () => fetchTemplates());
+
+      fetchTemplates().catch((error) => {
+        console.error(error);
+        libraryEl.innerHTML = '<p style="color:#b91c1c;">Unable to load snippets.</p>';
+      });
+    </script>
+  </body>
+</html>

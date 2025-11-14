@@ -1,87 +1,80 @@
-# ContentHub Calendar
+# Creator RAG Engine (WIP)
 
-Plan video ideas directly on a visual calendar, toggle completion, and keep track of scripts/notes in one place.
+This repository is being transformed into a Retrieval-Augmented Generation (RAG) assistant for academic and technical creators who need high-signal hooks, outlines, and scripts without living inside ideation docs all day. The long-term goal is a personalized content memory that understands your story, tone, and aspirational audience (STEM majors, student founders, hacker-house builders, ambitious college students) and can surface relevant ideas on demand.
 
----
-
-## Quickstart
-
-```bash
-./run.sh
-```
-
-The helper script bootstraps `.venv`, installs the editable project defined in `pyproject.toml`, and runs `uvicorn app.main:app --reload` on `http://127.0.0.1:8000`.
-
-Override defaults as needed:
-
-```bash
-HOST=0.0.0.0 PORT=9000 RELOAD=false ./run.sh
-```
-
-Manual install:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e .
-uvicorn app.main:app --reload
-```
+> ⚠️ Current code still runs the legacy calendar/brief app. The documentation below describes the target system and the implementation plan guiding the migration.
 
 ---
 
-## Features
-- Calendar-first workflow with 42-day grid and “Today” highlighting.
-- Inline form per day for ultra-fast idea capture.
-- Edit page for longer notes, script drafts, date changes, and completion toggles.
-- REST API for CRUD + calendar exports (`/api/ideas`, `/api/calendar`).
-- SQLite-backed persistence (auto-created `contenthub.db`).
+## Vision
+
+- **Personalized memory**: ingest every artifact you produce (threads, scripts, analytics, voice notes) and index them in a relational + vector store so the model can cite your own material when drafting.
+- **Audience-aware generation**: every response is grounded in your style plus the specific personas you attract, ensuring hooks align with the high-achieving academic/tech crowd.
+- **Pattern insights**: the system continuously analyzes top-performing posts to learn which structures, cadences, and CTAs resonate so it can recommend blueprints instead of generic advice.
+- **Idea → Script pipeline**: you ask for a topic, the engine retrieves precedent, proposes hook variations, expands them into outlines/scripts, and tracks provenance.
 
 ---
 
-## Project Layout
+## Architecture Pillars
 
-```
-app/
-├── config.py          # Paths + shared settings
-├── database.py        # SQLAlchemy engine/session helpers
-├── models.py          # ORM models
-├── routers/           # HTML + API endpoints
-├── schemas.py         # Pydantic contracts
-├── services.py        # Domain helpers (fetch/toggle/query ideas)
-├── lib/calendar.py    # Calendar math + grouping helpers
-├── static/            # CSS / assets served via FastAPI
-└── templates/         # Jinja2 views (calendar + edit)
-run.sh                 # One-command dev server bootstrap
-pyproject.toml         # Dependencies + tooling config
-```
+1. **Memory Architecture**
+   - Ingest tweets, long-form scripts, newsletters, Notion pages, audio transcripts, and performance analytics.
+   - Store raw text in object storage, metadata in Postgres, and semantic representations in a vector DB (pgvector or Pinecone).
+   - Maintain persona profiles (you + micro-audiences) for grounding prompts.
 
----
+2. **Retrieval Layer**
+   - Multi-hop retrieval: metadata filter (content type, performance tier, persona) → dense similarity search.
+   - Hybrid ranking (BM25 + embeddings) ensures factual snippets and stylistic cues are both surfaced.
+   - Scheduled pattern-mining jobs cluster high-performing hooks to generate “recipes.”
 
-## Testing & Tooling
+3. **Generation Stack**
+   - Prompt schema: system message with persona + instructions, contextual snippets, and explicit task formatting (hooks, outline, CTA, script).
+   - Primary LLM: GPT‑4.1 (or equivalent). Later phases may fine-tune adapters using your archive.
+   - Output validators enforce JSON so UI blocks render consistently.
 
-Install dev extras and run pytest:
+4. **Analytics & Pattern Locator**
+   - Feature extraction per post: hook archetype, pacing, CTA type, sentiment, etc.
+   - Correlate features with retention metrics (watch time, CTR) to highlight winning structures.
+   - Insight queries like “Which hook formats over-index for STEM majors?” feed both dashboards and generation prompts.
 
-```bash
-pip install -e ".[dev]"
-pytest
-```
+5. **User Workflow**
+   - Dashboard replaces the calendar: idea stream, memory search, and pattern pulses.
+   - Brief builder auto-fills outlines/scripts with cited snippets and suggestions for B-roll + CTAs.
+   - Feedback panel lets you up/down vote generated ideas to reinforce preferences.
 
-Format/lint (Ruff):
+6. **Data Flow**
+   1. Ingest sources via API/webhooks/manual uploads.
+   2. Normalize → embed → persist in vector + relational stores.
+   3. On request, filter + retrieve + compose prompt + call LLM.
+   4. Store generated assets with provenance and feed performance back into analytics.
 
-```bash
-ruff check .
-```
-
----
-
-## UI Quick Tour
-1. Visit `http://127.0.0.1:8000` to load the current month. Use the arrows for previous/next months or jump back to “Today”.
-2. Hover any day tile, type a hook in “Add idea”, hit `+` to schedule it.
-3. Toggle completion via the checkbox; edit or delete ideas inline.
-4. Open the **Edit** link for richer notes or to mark completion with a timestamp.
+7. **Implementation Tips & Stack**
+   - FastAPI backend, Postgres/pgvector, object storage (S3), Celery/RQ for ingestion + analytics workers.
+   - Embeddings: `text-embedding-3-large` (or similar) for semantic search.
+   - RAG caching layer to memoize frequent intents (“give me 5 study hooks”).
+   - Security: encrypt archive at rest; prefer self-hosted deployment for IP-heavy data.
 
 ---
 
-## Resetting the Database
+## Implementation Plan
 
-Delete `contenthub.db` if you want a clean slate. The file is recreated on the next run with the latest schema (including `completed` + `completed_at` columns).
+| Phase | Focus | Key Deliverables |
+| --- | --- | --- |
+| 0. Stabilize | Preserve current app while scaffolding new services. | Document migration plan (this file), add feature flagging, ensure deploy pipeline ready for schema changes. |
+| 1. Memory Ingestion | Capture and normalize creator assets. | Ingestion APIs, asset metadata schema, embedding + storage jobs, persona profile definitions. |
+| 2. Retrieval Stack | Build multi-hop search + pattern miner. | Hybrid retriever service, analytics jobs that cluster top posts, pattern recipe store. |
+| 3. Generation Engine | Wire RAG pipeline + output contracts. | Prompt templates, GPT‑4.1 integration, JSON schema for hooks/outlines/scripts, provenance logging. |
+| 4. Insights Layer | Ship analytics views and pattern surfacer. | Feature extraction workers, reporting endpoints (“what worked last week”), dashboard cards. |
+| 5. Creator UI | Replace calendar with RAG dashboard. | Idea feed, memory search bar, script workspace, feedback mechanisms. |
+| 6. Feedback & Loop Closure | Teach the system over time. | User rating signals, publish-event ingestion, automatic performance backfill updating pattern stats. |
+| 7. Polish & Scale | Monitoring, security, extensibility. | Encryption, audit logs, per-persona prompts, multi-creator tenancy. |
+
+Each phase should land in small PRs (e.g., Phase 1 can be broken into ingestion schema → worker pipeline → admin upload UI). Legacy calendar routes can be deprecated once Phase 5 ships.
+
+---
+
+## Development Notes
+
+- **Running the legacy app**: `./run.sh` still starts the FastAPI + SQLite calendar for now.
+- **Testing**: `pip install -e ".[dev]" && pytest`.
+- **Next actions**: begin Phase 1 by defining ingestion tables + background workers; track progress in issues/PRs referencing this plan.

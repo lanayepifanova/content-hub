@@ -75,3 +75,8 @@ async def edit_submit(request: Request, idea_id: int, db: Session = Depends(get_
     idea.completed_at = datetime.now(timezone.utc) if completed else None
     db.commit()
     return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.get("/snippets", response_class=HTMLResponse)
+def snippets_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse("snippets.html", {"request": request})

@@ -13,11 +13,14 @@
         <h1>Content Calendar</h1>
         <p class="subtitle">Drop video hooks on the days you plan to publish and check them off once recorded.</p>
       </div>
-      <nav class="month-nav">
-        <a href="/?year={{ previous[0] }}&month={{ previous[1] }}" aria-label="Previous month">← {{ previous_label }}</a>
-        <a class="today-link" href="/">Today</a>
-        <a href="/?year={{ next[0] }}&month={{ next[1] }}" aria-label="Next month">{{ next_label }} →</a>
-      </nav>
+      <div class="month-actions">
+        <nav class="month-nav">
+          <a href="/?year={{ previous[0] }}&month={{ previous[1] }}" aria-label="Previous month">← {{ previous_label }}</a>
+          <a class="today-link" href="/">Today</a>
+          <a href="/?year={{ next[0] }}&month={{ next[1] }}" aria-label="Next month">{{ next_label }} →</a>
+        </nav>
+        <a class="snippet-link" href="/snippets">Snippet Library</a>
+      </div>
     </header>
 
     <main>
@@ -53,6 +56,7 @@
               </ul>
               <form class="day-form" data-day-form>
                 <input name="title" placeholder="Add idea" autocomplete="off" />
+                <button type="button" class="template-btn" data-template-launch aria-label="Insert template" title="Templates">Templates</button>
                 <button type="submit">+</button>
               </form>
             </section>
@@ -106,6 +110,157 @@
           }
         });
       });
+
+      const templateState = { loaded: false, items: [], filter: 'all' };
+      const popover = document.createElement('div');
+      popover.className = 'template-popover hidden';
+      popover.innerHTML = `
+        <header>
+          <h4>Snippets</h4>
+          <p>Insert hook formulas or intro scripts.</p>
+        </header>
+        <div style="margin-bottom:0.5rem;">
+          <select data-template-filter style="width:100%;border-radius:10px;border:1px solid #d8defa;padding:0.2rem 0.4rem;font-family:inherit;">
+            <option value="all">All categories</option>
+            <option value="Hook">Hooks</option>
+            <option value="Intro">Intros</option>
+            <option value="CTA">CTAs</option>
+          </select>
+        </div>
+        <ul data-template-list></ul>
+      `;
+      document.body.appendChild(popover);
+      const templateList = popover.querySelector('[data-template-list]');
+      const templateFilter = popover.querySelector('[data-template-filter]');
+      let activeInput = null;
+
+      function formatCategory(category) {
+        return category || 'Uncategorized';
+      }
+
+      async function ensureTemplates(force = false) {
+        if (templateState.loaded && !force) return templateState.items;
+        try {
+          const res = await fetch('/api/templates');
+          if (!res.ok) return [];
+          templateState.items = await res.json();
+          templateState.loaded = true;
+        } catch (error) {
+          console.error(error);
+        }
+        renderTemplateList();
+        return templateState.items;
+      }
+
+      function renderTemplateList() {
+        templateList.innerHTML = '';
+        const filtered = templateState.items.filter((tpl) => templateState.filter === 'all' || formatCategory(tpl.category) === templateState.filter);
+        if (!filtered.length) {
+          const li = document.createElement('li');
+          li.innerHTML = '<p style="color:#6b7280;font-size:0.85rem;margin:0;">No templates yet.</p>';
+          templateList.appendChild(li);
+          return;
+        }
+        filtered.forEach((tpl) => {
+          const li = document.createElement('li');
+          const bodyPreview = tpl.body.length > 80 ? `${tpl.body.slice(0, 77)}…` : tpl.body;
+          const ratingLabel = tpl.rating != null ? `${tpl.rating.toFixed(1)}★` : 'New';
+          li.innerHTML = `
+            <div class="popover-item">
+              <button type="button" data-template-id="${tpl.id}">
+                <strong>${tpl.name}</strong>
+                <span>${formatCategory(tpl.category)} • ${ratingLabel}</span>
+                <em>${bodyPreview}</em>
+              </button>
+              <button type="button" class="favorite-toggle" data-template-favorite="${tpl.id}" aria-label="Favorite template">
+                ${tpl.favorite ? '★' : '☆'}
+              </button>
+            </div>
+          `;
+          templateList.appendChild(li);
+        });
+      }
+
+      function closePopover() {
+        popover.classList.add('hidden');
+        activeInput = null;
+      }
+
+      async function openPopover(button) {
+        const form = button.closest('[data-day-form]');
+        if (!form || !form.elements.title) return;
+        activeInput = form.elements.title;
+        await ensureTemplates();
+        renderTemplateList();
+        popover.classList.remove('hidden');
+        const rect = button.getBoundingClientRect();
+        const popoverWidth = popover.offsetWidth || 240;
+        const left = Math.min(rect.left + window.scrollX, window.scrollX + window.innerWidth - popoverWidth - 16);
+        popover.style.top = `${rect.bottom + window.scrollY + 8}px`;
+        popover.style.left = `${Math.max(16, left)}px`;
+      }
+
+      templateList.addEventListener('click', (event) => {
+        const favoriteTarget = event.target.closest('[data-template-favorite]');
+        if (favoriteTarget) {
+          const templateId = Number(favoriteTarget.dataset.templateFavorite);
+          const template = templateState.items.find((item) => item.id === templateId);
+          if (template) {
+            toggleTemplateFavorite(templateId, !template.favorite);
+          }
+          event.stopPropagation();
+          return;
+        }
+        const target = event.target.closest('[data-template-id]');
+        if (!target || !activeInput) return;
+        const templateId = Number(target.dataset.templateId);
+        const template = templateState.items.find((item) => item.id === templateId);
+        if (template) {
+          activeInput.value = template.body;
+          activeInput.focus();
+        }
+        closePopover();
+      });
+
+      document.addEventListener('click', (event) => {
+        if (event.target.closest('[data-template-launch]')) return;
+        if (popover.contains(event.target)) return;
+        closePopover();
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          closePopover();
+        }
+      });
+
+      document.querySelectorAll('[data-template-launch]').forEach((button) => {
+        button.addEventListener('click', (event) => {
+          event.preventDefault();
+          openPopover(button);
+        });
+      });
+
+      templateFilter.addEventListener('change', (event) => {
+        templateState.filter = event.target.value;
+        renderTemplateList();
+      });
+
+      async function toggleTemplateFavorite(id, favorite) {
+        try {
+          const res = await fetch(`/api/templates/${id}/favorite`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ favorite }),
+          });
+          if (!res.ok) throw new Error('Unable to update favorite');
+          await ensureTemplates(true);
+          renderTemplateList();
+        } catch (error) {
+          console.error(error);
+          alert('Unable to save favorite');
+        }
+      }
     </script>
   </body>
 </html>

@@ -6,45 +6,922 @@
     <title>Edit Idea – {{ idea.title }}</title>
     <link rel="stylesheet" href="/static/styles.css" />
     <style>
-      body { background: #f4f6fb; font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; }
-      main { max-width: 720px; margin: 3rem auto; background: #fff; padding: 2rem; border-radius: 20px; box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12); }
-      h1 { margin-top: 0; }
-      form { display: flex; flex-direction: column; gap: 1rem; }
-      label { font-weight: 600; font-size: 0.9rem; color: #4b5563; }
-      input, textarea { margin-top: 0.35rem; width: 100%; padding: 0.75rem; border-radius: 12px; border: 1px solid #d8defa; font-size: 1rem; font-family: inherit; }
-      textarea { min-height: 140px; resize: vertical; }
-      button { padding: 0.8rem 1.2rem; border: none; border-radius: 999px; background: #1d4ed8; color: #fff; font-size: 1rem; cursor: pointer; }
-      .actions { display: flex; justify-content: space-between; align-items: center; }
-      .back-link { text-decoration: none; color: #6d28d9; }
-      .checkbox { display: flex; align-items: center; gap: 0.5rem; font-weight: 500; }
+      body {
+        background: #f4f6fb;
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        margin: 0;
+      }
+      main {
+        max-width: 1200px;
+        margin: 2rem auto 4rem;
+        padding: 0 1.5rem;
+      }
+      .page-shell {
+        background: #fff;
+        border-radius: 24px;
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+        padding: 2.5rem;
+      }
+      .page-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 2rem;
+      }
+      .page-header h1 {
+        margin: 0;
+        font-size: 2rem;
+      }
+      .back-link {
+        color: #6d28d9;
+        text-decoration: none;
+        font-weight: 600;
+      }
+      form.idea-form {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2.5rem;
+      }
+      form.idea-form label {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #4b5563;
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+      }
+      .idea-form input[type="text"],
+      .idea-form input[type="date"] {
+        border: 1px solid #d8defa;
+        border-radius: 12px;
+        padding: 0.75rem 0.9rem;
+        font-size: 1rem;
+        font-family: inherit;
+      }
+      .idea-form .checkbox {
+        flex-direction: row;
+        align-items: center;
+        gap: 0.75rem;
+      }
+      .idea-form button {
+        grid-column: 1 / -1;
+        justify-self: end;
+        padding: 0.85rem 1.5rem;
+        border-radius: 999px;
+        border: none;
+        background: #1d4ed8;
+        color: #fff;
+        font-size: 1rem;
+        cursor: pointer;
+      }
+      .brief-builder {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+      .builder-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+        gap: 1.5rem;
+      }
+      .section-card {
+        background: #f8fafc;
+        border-radius: 18px;
+        padding: 1.5rem;
+        border: 1px solid #e2e8ff;
+      }
+      .section-card h3 {
+        margin: 0 0 0.5rem;
+        font-size: 1.05rem;
+      }
+      .section-card p.helper {
+        margin: 0 0 1rem;
+        color: #6b7280;
+        font-size: 0.9rem;
+      }
+      .block-row {
+        background: #fff;
+        border-radius: 14px;
+        padding: 1rem;
+        border: 1px solid #e2e8ff;
+        margin-bottom: 1rem;
+      }
+      .block-toolbar {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+      }
+      .block-toolbar select {
+        flex: 1;
+        border-radius: 10px;
+        border: 1px solid #d8defa;
+        padding: 0.35rem 0.5rem;
+        font-family: inherit;
+      }
+      .block-toolbar button {
+        border: none;
+        border-radius: 10px;
+        padding: 0.35rem 0.7rem;
+        background: #fee2e2;
+        color: #b91c1c;
+        cursor: pointer;
+      }
+      .block-row textarea {
+        width: 100%;
+        border: 1px solid #d8defa;
+        border-radius: 12px;
+        padding: 0.75rem;
+        resize: vertical;
+        min-height: 90px;
+        font-family: inherit;
+      }
+      .block-row .checkline {
+        margin-top: 0.75rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        font-weight: 600;
+      }
+      .inline-controls {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+      .inline-controls button {
+        border: 1px dashed #c7d2fe;
+        border-radius: 999px;
+        padding: 0.35rem 0.9rem;
+        background: #eef2ff;
+        color: #4338ca;
+        cursor: pointer;
+        font-size: 0.9rem;
+      }
+      .shots-list,
+      .cta-list,
+      .attachments-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+      .shot-card,
+      .cta-card,
+      .attachment-card {
+        background: #fff;
+        border-radius: 14px;
+        padding: 1rem;
+        border: 1px solid #e2e8ff;
+      }
+      .shot-card input,
+      .shot-card textarea,
+      .cta-card input {
+        width: 100%;
+        border: 1px solid #d8defa;
+        border-radius: 10px;
+        padding: 0.6rem 0.75rem;
+        font-family: inherit;
+        margin-bottom: 0.6rem;
+      }
+      .cta-card .cta-row {
+        display: flex;
+        gap: 0.5rem;
+      }
+      .cta-card .cta-row input {
+        margin-bottom: 0;
+      }
+      .cta-card .cta-row input:first-child {
+        flex: 2;
+      }
+      .cta-card .cta-row input:last-child {
+        flex: 1;
+      }
+      .shot-card button,
+      .cta-card button,
+      .attachment-card button {
+        border: none;
+        border-radius: 8px;
+        padding: 0.35rem 0.6rem;
+        background: #fee2e2;
+        color: #b91c1c;
+        cursor: pointer;
+        font-size: 0.85rem;
+      }
+      .token-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+      }
+      .token {
+        background: #eef2ff;
+        color: #3730a3;
+        border-radius: 999px;
+        padding: 0.3rem 0.8rem;
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+      .token button {
+        border: none;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+        font-size: 0.9rem;
+      }
+      .autosave-bar {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: center;
+        border-radius: 16px;
+        border: 1px solid #c7d2fe;
+        padding: 0.75rem 1rem;
+        background: #eef2ff;
+      }
+      .autosave-bar button {
+        background: #1d4ed8;
+        color: #fff;
+        border: none;
+        border-radius: 999px;
+        padding: 0.5rem 1.3rem;
+        cursor: pointer;
+      }
+      textarea.thumbnail-notes {
+        width: 100%;
+        border: 1px solid #d8defa;
+        border-radius: 12px;
+        padding: 0.9rem;
+        min-height: 110px;
+        resize: vertical;
+      }
+      .attachments-grid input[type="file"] {
+        border: 1px dashed #c7d2fe;
+        border-radius: 14px;
+        padding: 0.9rem;
+        width: 100%;
+        cursor: pointer;
+        background: #fff;
+      }
+      .attachments-grid a {
+        color: #1d4ed8;
+        text-decoration: none;
+        word-break: break-word;
+      }
+      .versions-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+      }
+      .versions-list button {
+        border: 1px solid #d8defa;
+        border-radius: 10px;
+        padding: 0.6rem 0.75rem;
+        background: #fff;
+        text-align: left;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .versions-list button span {
+        display: block;
+        font-size: 0.85rem;
+        color: #6b7280;
+      }
+      @media (max-width: 960px) {
+        .builder-grid {
+          grid-template-columns: 1fr;
+        }
+      }
     </style>
   </head>
-  <body>
+  <body data-idea-id="{{ idea.id }}">
     <main>
-      <a class="back-link" href="/">← Back to calendar</a>
-      <h1>Edit Idea</h1>
-      <form method="post">
-        <label>
-          Title / Hook
-          <input name="title" value="{{ idea.title }}" required />
-        </label>
-        <label>
-          Script / Notes (optional)
-          <textarea name="description">{{ idea.description or '' }}</textarea>
-        </label>
-        <label>
-          Target Date
-          <input type="date" name="target_date" value="{{ idea.target_date.isoformat() }}" required />
-        </label>
-        <label class="checkbox">
-          <input type="checkbox" name="completed" {% if idea.completed %}checked{% endif %} />
-          Mark complete
-        </label>
-        <div class="actions">
-          <span></span>
-          <button type="submit">Save Changes</button>
+      <div class="page-shell">
+        <div class="page-header">
+          <div>
+            <a class="back-link" href="/">← Back to calendar</a>
+            <h1>Edit Idea</h1>
+            <p>Give this idea a strategic brief with scripts, CTAs, hashtags, shots, and thumbnails.</p>
+          </div>
         </div>
-      </form>
+        <form class="idea-form" method="post">
+          <label>
+            Title / Hook
+            <input name="title" value="{{ idea.title }}" required />
+          </label>
+          <label>
+            Target Date
+            <input type="date" name="target_date" value="{{ idea.target_date.isoformat() }}" required />
+          </label>
+          <label class="checkbox">
+            <input type="checkbox" name="completed" {% if idea.completed %}checked{% endif %} />
+            Mark complete
+          </label>
+          <textarea name="description" id="legacy-description" hidden>{{ idea.description or '' }}</textarea>
+          <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end">
+            <button type="submit">Save Changes</button>
+          </div>
+        </form>
+
+        <section class="brief-builder" id="brief-panel">
+          <div class="autosave-bar">
+            <div>
+              <strong>Creative Brief Autosave</strong>
+              <div data-autosave-status>Loading brief…</div>
+            </div>
+            <div class="inline-controls">
+              <input type="text" id="snapshot-label" placeholder="Version label (optional)" style="border: 1px solid #c7d2fe; border-radius: 999px; padding: 0.4rem 0.8rem; font-family: inherit; font-size: 0.9rem;" />
+              <button type="button" data-save-version>Save snapshot</button>
+            </div>
+          </div>
+
+          <div class="builder-grid">
+            <div class="builder-column">
+              <article class="section-card">
+                <h3>Markdown / Blocks</h3>
+                <p class="helper">Stack Notion-style blocks for your script beats, quotes, and checklists.</p>
+                <div class="inline-controls" style="margin-bottom: 1rem">
+                  <button type="button" data-add-block="text">+ Text block</button>
+                  <button type="button" data-add-block="heading">+ Heading</button>
+                  <button type="button" data-add-block="quote">+ Quote</button>
+                  <button type="button" data-add-block="checklist">+ Checklist</button>
+                </div>
+                <div data-blocks></div>
+              </article>
+
+              <article class="section-card">
+                <h3>Shot List</h3>
+                <p class="helper">Map A-roll, B-roll, and cutaway ideas so filming stays fast.</p>
+                <div class="shots-list" data-shots></div>
+                <button type="button" data-add-shot style="margin-top: 0.5rem; border: 1px dashed #c7d2fe; border-radius: 999px; padding: 0.5rem 1.2rem; background: #fff; color: #4338ca; cursor: pointer;">
+                  + Add shot
+                </button>
+              </article>
+            </div>
+
+            <div class="builder-column">
+              <article class="section-card">
+                <h3>CTAs</h3>
+                <p class="helper">Save your favorite hook formulas, intro scripts, and DM prompts.</p>
+                <div class="cta-list" data-ctas></div>
+                <button type="button" data-add-cta style="margin-top: 0.5rem; border: 1px dashed #c7d2fe; border-radius: 999px; padding: 0.5rem 1.2rem; background: #fff; color: #4338ca; cursor: pointer;">
+                  + Add CTA
+                </button>
+              </article>
+
+              <article class="section-card">
+                <h3>Hashtags</h3>
+                <p class="helper">Track the keyword stack you want on this post.</p>
+                <div class="token-list" data-hashtag-list></div>
+                <input type="text" data-hashtag-input placeholder="#contenthub" style="border: 1px solid #d8defa; border-radius: 12px; padding: 0.65rem 0.75rem; width: 100%; font-family: inherit;" />
+              </article>
+
+              <article class="section-card">
+                <h3>Thumbnail Notes</h3>
+                <textarea class="thumbnail-notes" data-thumbnail placeholder="Describe the thumbnail concept..."></textarea>
+              </article>
+
+              <article class="section-card">
+                <h3>Attachments</h3>
+                <p class="helper">Upload reference decks, thumbnail drafts, or scripts. Files are stored in S3.</p>
+                <div class="attachments-grid" data-attachments></div>
+                <input type="file" data-attachment-upload />
+                <div data-attachment-error style="color: #b91c1c; font-size: 0.85rem; margin-top: 0.5rem;"></div>
+              </article>
+
+              <article class="section-card">
+                <h3>Autosave Versions</h3>
+                <div class="versions-list" data-versions></div>
+              </article>
+            </div>
+          </div>
+        </section>
+      </div>
     </main>
+
+    <script>
+      (function () {
+        const ideaId = Number(document.body.dataset.ideaId);
+        const endpoints = {
+          brief: `/api/ideas/${ideaId}/brief`,
+          autosave: `/api/ideas/${ideaId}/brief/autosave`,
+          versions: `/api/ideas/${ideaId}/brief/versions`,
+          restore: (versionId) => `/api/ideas/${ideaId}/brief/versions/${versionId}/restore`,
+          attachments: `/api/ideas/${ideaId}/brief/attachments/sign`,
+        };
+        const blockTypes = {
+          text: "Text",
+          heading: "Heading",
+          quote: "Quote",
+          checklist: "Checklist",
+        };
+        let state = {
+          blocks: [],
+          shots: [],
+          ctas: [],
+          hashtags: [],
+          thumbnail_notes: "",
+          attachments: [],
+        };
+        let versions = [];
+        let lastSavedAt = null;
+        let autosaveTimer = null;
+        const autosaveStatus = document.querySelector("[data-autosave-status]");
+        const snapshotLabel = document.getElementById("snapshot-label");
+        const legacyField = document.getElementById("legacy-description");
+
+        const els = {
+          blocks: document.querySelector("[data-blocks]"),
+          shots: document.querySelector("[data-shots]"),
+          ctas: document.querySelector("[data-ctas]"),
+          hashtagList: document.querySelector("[data-hashtag-list]"),
+          hashtagInput: document.querySelector("[data-hashtag-input]"),
+          thumbnail: document.querySelector("[data-thumbnail]"),
+          attachments: document.querySelector("[data-attachments]"),
+          attachmentError: document.querySelector("[data-attachment-error]"),
+          versions: document.querySelector("[data-versions]"),
+          uploadInput: document.querySelector("[data-attachment-upload]"),
+        };
+
+        function randomId() {
+          if (window.crypto && window.crypto.randomUUID) {
+            return window.crypto.randomUUID();
+          }
+          return Math.random().toString(36).slice(2);
+        }
+
+        function escapeHtml(value) {
+          return (value ?? "")
+            .toString()
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+        }
+
+        function normalizeContent(content = {}) {
+          const normalized = {
+            blocks: Array.isArray(content.blocks) ? content.blocks : [],
+            shots: Array.isArray(content.shots) ? content.shots : [],
+            ctas: Array.isArray(content.ctas) ? content.ctas : [],
+            hashtags: Array.isArray(content.hashtags) ? content.hashtags : [],
+            thumbnail_notes: content.thumbnail_notes || "",
+            attachments: Array.isArray(content.attachments) ? content.attachments : [],
+          };
+          normalized.blocks = normalized.blocks.map((block) => ({
+            id: block.id || randomId(),
+            type: block.type && blockTypes[block.type] ? block.type : "text",
+            text: block.text || "",
+            checked: typeof block.checked === "boolean" ? block.checked : false,
+          }));
+          normalized.shots = normalized.shots.map((shot) => ({
+            id: shot.id || randomId(),
+            cue: shot.cue || "",
+            setup: shot.setup || "",
+            shot_type: shot.shot_type || "",
+          }));
+          normalized.ctas = normalized.ctas.map((cta) => ({
+            id: cta.id || randomId(),
+            text: cta.text || "",
+            platform: cta.platform || "",
+          }));
+          normalized.attachments = normalized.attachments.map((file) => ({
+            id: file.id || randomId(),
+            filename: file.filename || file.name || "Attachment",
+            url: file.url || "",
+            key: file.key,
+            content_type: file.content_type || "",
+            size: file.size || null,
+          }));
+          return normalized;
+        }
+
+        function syncLegacyDescription() {
+          if (!legacyField) return;
+          const segments = [];
+          if (state.blocks.length) {
+            segments.push(state.blocks.map((b) => b.text).filter(Boolean).join("\\n\\n"));
+          }
+          if (state.shots.length) {
+            segments.push(
+              state.shots
+                .map((shot) => `Shot: ${shot.cue}${shot.setup ? " — " + shot.setup : ""}`)
+                .join("\\n")
+            );
+          }
+          if (state.ctas.length) {
+            segments.push(state.ctas.map((cta) => `CTA: ${cta.text}`).join("\\n"));
+          }
+          if (state.hashtags.length) {
+            segments.push(`Hashtags: ${state.hashtags.join(" ")}`);
+          }
+          if (state.thumbnail_notes) {
+            segments.push(`Thumbnail: ${state.thumbnail_notes}`);
+          }
+          legacyField.value = segments.join("\\n\\n").slice(0, 7900);
+        }
+
+        function updateAutosaveStatus(message) {
+          if (autosaveStatus) {
+            autosaveStatus.textContent = message;
+          }
+        }
+
+        function markDirty() {
+          syncLegacyDescription();
+          if (autosaveTimer) clearTimeout(autosaveTimer);
+          updateAutosaveStatus("Saving draft…");
+          autosaveTimer = setTimeout(() => persistBrief(true), 1200);
+        }
+
+        function createBlockElement(block) {
+          const row = document.createElement("div");
+          row.className = "block-row";
+          row.dataset.blockId = block.id;
+          row.innerHTML = `
+            <div class="block-toolbar">
+              <select data-block-type>
+                ${Object.entries(blockTypes)
+                  .map(
+                    ([value, label]) =>
+                      `<option value="${value}" ${block.type === value ? "selected" : ""}>${label}</option>`
+                  )
+                  .join("")}
+              </select>
+              <button type="button" data-remove-block>Remove</button>
+            </div>
+            <textarea data-block-text placeholder="Write in Markdown...">${escapeHtml(block.text || "")}</textarea>
+            ${
+              block.type === "checklist"
+                ? `<label class="checkline"><input type="checkbox" data-block-checked ${
+                    block.checked ? "checked" : ""
+                  } /> Completed</label>`
+                : ""
+            }
+          `;
+          const select = row.querySelector("[data-block-type]");
+          const textarea = row.querySelector("[data-block-text]");
+          const removeBtn = row.querySelector("[data-remove-block]");
+          select.addEventListener("change", () => {
+            block.type = select.value;
+            if (block.type !== "checklist") {
+              block.checked = false;
+            }
+            renderBlocks();
+            markDirty();
+          });
+          textarea.addEventListener("input", () => {
+            block.text = textarea.value;
+            markDirty();
+          });
+          if (block.type === "checklist") {
+            const checkbox = row.querySelector("[data-block-checked]");
+            checkbox.addEventListener("change", () => {
+              block.checked = checkbox.checked;
+              markDirty();
+            });
+          }
+          removeBtn.addEventListener("click", () => {
+            state.blocks = state.blocks.filter((item) => item.id !== block.id);
+            renderBlocks();
+            markDirty();
+          });
+          return row;
+        }
+
+        function renderBlocks() {
+          els.blocks.innerHTML = "";
+          if (!state.blocks.length) {
+            state.blocks.push({ id: randomId(), type: "text", text: "", checked: false });
+          }
+          state.blocks.forEach((block) => {
+            els.blocks.appendChild(createBlockElement(block));
+          });
+        }
+
+        function renderShots() {
+          els.shots.innerHTML = "";
+          state.shots.forEach((shot) => {
+            const card = document.createElement("div");
+            card.className = "shot-card";
+            card.dataset.shotId = shot.id;
+            card.innerHTML = `
+              <input type="text" data-shot-cue placeholder="Shot description" value="${escapeHtml(shot.cue || "")}" />
+              <textarea data-shot-setup placeholder="Notes / camera moves">${escapeHtml(shot.setup || "")}</textarea>
+              <input type="text" data-shot-type placeholder="Shot type (A-roll, B-roll...)" value="${escapeHtml(shot.shot_type || "")}" />
+              <button type="button" data-remove-shot>Remove shot</button>
+            `;
+            card.querySelector("[data-shot-cue]").addEventListener("input", (event) => {
+              shot.cue = event.target.value;
+              markDirty();
+            });
+            card.querySelector("[data-shot-setup]").addEventListener("input", (event) => {
+              shot.setup = event.target.value;
+              markDirty();
+            });
+            card.querySelector("[data-shot-type]").addEventListener("input", (event) => {
+              shot.shot_type = event.target.value;
+              markDirty();
+            });
+            card.querySelector("[data-remove-shot]").addEventListener("click", () => {
+              state.shots = state.shots.filter((item) => item.id !== shot.id);
+              renderShots();
+              markDirty();
+            });
+            els.shots.appendChild(card);
+          });
+        }
+
+        function renderCTAs() {
+          els.ctas.innerHTML = "";
+          state.ctas.forEach((cta) => {
+            const card = document.createElement("div");
+            card.className = "cta-card";
+            card.dataset.ctaId = cta.id;
+            card.innerHTML = `
+              <div class="cta-row">
+                <input type="text" data-cta-text placeholder="CTA script" value="${escapeHtml(cta.text || "")}" />
+                <input type="text" data-cta-platform placeholder="Channel" value="${escapeHtml(cta.platform || "")}" />
+              </div>
+              <button type="button" data-remove-cta>Remove CTA</button>
+            `;
+            card.querySelector("[data-cta-text]").addEventListener("input", (event) => {
+              cta.text = event.target.value;
+              markDirty();
+            });
+            card.querySelector("[data-cta-platform]").addEventListener("input", (event) => {
+              cta.platform = event.target.value;
+              markDirty();
+            });
+            card.querySelector("[data-remove-cta]").addEventListener("click", () => {
+              state.ctas = state.ctas.filter((item) => item.id !== cta.id);
+              renderCTAs();
+              markDirty();
+            });
+            els.ctas.appendChild(card);
+          });
+        }
+
+        function renderHashtags() {
+          els.hashtagList.innerHTML = "";
+          state.hashtags.forEach((tag) => {
+            const token = document.createElement("span");
+            token.className = "token";
+            token.textContent = tag;
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.textContent = "×";
+            btn.addEventListener("click", () => {
+              state.hashtags = state.hashtags.filter((item) => item !== tag);
+              renderHashtags();
+              markDirty();
+            });
+            token.appendChild(btn);
+            els.hashtagList.appendChild(token);
+          });
+        }
+
+        function renderThumbnail() {
+          els.thumbnail.value = state.thumbnail_notes || "";
+        }
+
+        function renderAttachments() {
+          els.attachments.innerHTML = "";
+          state.attachments.forEach((file) => {
+            const card = document.createElement("div");
+            card.className = "attachment-card";
+            card.dataset.attachmentId = file.id;
+            const size = file.size ? ` • ${(file.size / 1024).toFixed(1)} KB` : "";
+            const href = file.url || "#";
+            const attrs = file.url ? 'target="_blank" rel="noopener"' : 'aria-disabled="true"';
+            card.innerHTML = `
+              <a href="${href}" ${attrs}>${escapeHtml(file.filename)}</a>
+              <p style="margin: 0.3rem 0; color: #6b7280; font-size: 0.85rem;">
+                ${file.content_type || "file"}${size}
+              </p>
+              <button type="button" data-remove-attachment>Remove</button>
+            `;
+            card.querySelector("[data-remove-attachment]").addEventListener("click", () => {
+              state.attachments = state.attachments.filter((item) => item.id !== file.id);
+              renderAttachments();
+              markDirty();
+            });
+            els.attachments.appendChild(card);
+          });
+        }
+
+        function renderVersions() {
+          els.versions.innerHTML = "";
+          if (!versions.length) {
+            const empty = document.createElement("p");
+            empty.textContent = "Autosaves will appear here as you write.";
+            empty.style.color = "#6b7280";
+            empty.style.fontSize = "0.9rem";
+            els.versions.appendChild(empty);
+            return;
+          }
+          versions.forEach((version) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.dataset.versionId = version.id;
+            const timestamp = new Date(version.created_at);
+            button.innerHTML = `
+              ${version.label || "Autosave"} – ${timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+              <span>${timestamp.toLocaleDateString()}</span>
+            `;
+            button.addEventListener("click", () => restoreVersion(version.id));
+            els.versions.appendChild(button);
+          });
+        }
+
+        function hydrateUI() {
+          renderBlocks();
+          renderShots();
+          renderCTAs();
+          renderHashtags();
+          renderThumbnail();
+          renderAttachments();
+        }
+
+        async function fetchBrief() {
+          try {
+            const res = await fetch(endpoints.brief);
+            if (!res.ok) throw new Error("Failed to load brief");
+            const payload = await res.json();
+            state = normalizeContent(payload.content);
+            lastSavedAt = payload.updated_at;
+            hydrateUI();
+            updateAutosaveStatus(`Last saved ${new Date(lastSavedAt).toLocaleTimeString()}`);
+            syncLegacyDescription();
+          } catch (error) {
+            console.error(error);
+            updateAutosaveStatus("Unable to load brief");
+          }
+        }
+
+        async function fetchVersions() {
+          try {
+            const res = await fetch(endpoints.versions);
+            if (!res.ok) return;
+            versions = await res.json();
+            renderVersions();
+          } catch (error) {
+            console.error(error);
+          }
+        }
+
+        async function persistBrief(isAutosave = true, label = null) {
+          const endpoint = isAutosave ? endpoints.autosave : endpoints.brief;
+          const resolvedLabel = isAutosave ? label : label || snapshotLabel.value || null;
+          try {
+            const res = await fetch(endpoint, {
+              method: isAutosave ? "POST" : "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ content: state, label: resolvedLabel }),
+            });
+            if (!res.ok) throw new Error("Save failed");
+            const payload = await res.json();
+            state = normalizeContent(payload.content);
+            lastSavedAt = payload.updated_at;
+            hydrateUI();
+            syncLegacyDescription();
+            updateAutosaveStatus(`Saved ${new Date(lastSavedAt).toLocaleTimeString()}`);
+            if (isAutosave) {
+              fetchVersions();
+            } else {
+              snapshotLabel.value = "";
+              fetchVersions();
+            }
+          } catch (error) {
+            console.error(error);
+            updateAutosaveStatus("Save failed");
+          }
+        }
+
+        async function restoreVersion(versionId) {
+          updateAutosaveStatus("Restoring version…");
+          try {
+            const res = await fetch(endpoints.restore(versionId), { method: "POST" });
+            if (!res.ok) throw new Error("Unable to restore version");
+            const payload = await res.json();
+            state = normalizeContent(payload.content);
+            lastSavedAt = payload.updated_at;
+            hydrateUI();
+            syncLegacyDescription();
+            updateAutosaveStatus(`Restored ${new Date(lastSavedAt).toLocaleTimeString()}`);
+            fetchVersions();
+          } catch (error) {
+            console.error(error);
+            updateAutosaveStatus("Restore failed");
+          }
+        }
+
+        async function uploadAttachment(file) {
+          els.attachmentError.textContent = "";
+          try {
+            const res = await fetch(endpoints.attachments, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                filename: file.name,
+                content_type: file.type || "application/octet-stream",
+                size: file.size,
+              }),
+            });
+            if (!res.ok) throw new Error("Unable to sign upload");
+            const data = await res.json();
+            const formData = new FormData();
+            Object.entries(data.fields).forEach(([key, value]) => formData.append(key, value));
+            formData.append("file", file);
+            const uploadRes = await fetch(data.upload_url, {
+              method: "POST",
+              body: formData,
+            });
+            if (!uploadRes.ok) throw new Error("Upload failed");
+            state.attachments.push({
+              id: randomId(),
+              filename: file.name,
+              url: data.url,
+              key: data.key,
+              content_type: file.type || data.content_type,
+              size: file.size,
+            });
+            renderAttachments();
+            markDirty();
+          } catch (error) {
+            console.error(error);
+            els.attachmentError.textContent = error.message || "Attachment failed";
+          } finally {
+            els.uploadInput.value = "";
+          }
+        }
+
+        function bindEvents() {
+          document.querySelectorAll("[data-add-block]").forEach((button) => {
+            button.addEventListener("click", () => {
+              const type = button.getAttribute("data-add-block");
+              state.blocks.push({ id: randomId(), type, text: "", checked: false });
+              renderBlocks();
+              markDirty();
+            });
+          });
+          document.querySelector("[data-add-shot]").addEventListener("click", () => {
+            state.shots.push({ id: randomId(), cue: "", setup: "", shot_type: "" });
+            renderShots();
+            markDirty();
+          });
+          document.querySelector("[data-add-cta]").addEventListener("click", () => {
+            state.ctas.push({ id: randomId(), text: "", platform: "" });
+            renderCTAs();
+            markDirty();
+          });
+          els.hashtagInput.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === "," || event.key === " ") {
+              event.preventDefault();
+              const value = event.target.value.trim();
+              if (value) {
+                const hashtag = value.startsWith("#") ? value : `#${value}`;
+                if (!state.hashtags.includes(hashtag)) {
+                  state.hashtags.push(hashtag);
+                  renderHashtags();
+                  markDirty();
+                }
+              }
+              event.target.value = "";
+            }
+          });
+          els.thumbnail.addEventListener("input", (event) => {
+            state.thumbnail_notes = event.target.value;
+            markDirty();
+          });
+          document.querySelector("[data-save-version]").addEventListener("click", () => {
+            persistBrief(false, snapshotLabel.value || "Snapshot");
+          });
+          els.uploadInput.addEventListener("change", (event) => {
+            const file = event.target.files && event.target.files[0];
+            if (file) {
+              uploadAttachment(file);
+            }
+          });
+        }
+
+        function init() {
+          fetchBrief();
+          fetchVersions();
+          bindEvents();
+        }
+
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", init);
+        } else {
+          init();
+        }
+      })();
+    </script>
   </body>
 </html>

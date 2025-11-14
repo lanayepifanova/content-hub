@@ -42,6 +42,13 @@ body {
   color: #4b5563;
 }
 
+.month-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
 .month-nav {
   display: flex;
   gap: 0.75rem;
@@ -61,6 +68,16 @@ body {
 .month-nav .today-link {
   background: #1d4ed8;
   color: #fff;
+}
+
+.snippet-link {
+  border-radius: 999px;
+  border: 1px dashed #c7d2fe;
+  padding: 0.4rem 0.9rem;
+  text-decoration: none;
+  color: #4c1d95;
+  font-weight: 600;
+  background: #f8f4ff;
 }
 
 main {
@@ -185,7 +202,6 @@ main {
   gap: 0.35rem;
   width: 85%;
   margin-top: auto;
-  justify-content: flex-start;
   align-items: center;
 }
 
@@ -194,7 +210,7 @@ main {
   border: 1px solid #d9e0ff;
   padding: 0.35rem 0.65rem;
   font-size: 0.8rem;
-  flex: 0 0 65%;
+  flex: 1 1 auto;
   min-width: 0;
 }
 
@@ -206,6 +222,94 @@ main {
   padding: 0.3rem 0.55rem;
   cursor: pointer;
   flex: 0 0 auto;
+}
+
+.day-form .template-btn {
+  background: #f8fafc;
+  color: #1d4ed8;
+  border: 1px dashed #c7d2fe;
+  font-size: 0.7rem;
+  padding: 0.32rem 0.6rem;
+}
+
+.template-popover {
+  position: absolute;
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #dbe2ff;
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.18);
+  width: min(260px, calc(100vw - 2rem));
+  z-index: 20;
+  padding: 0.9rem;
+}
+
+.template-popover.hidden {
+  display: none;
+}
+
+.template-popover header {
+  margin-bottom: 0.5rem;
+}
+
+.template-popover h4 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.template-popover p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.8rem;
+}
+
+.template-popover ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.template-popover li button[data-template-id] {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid #e0e7ff;
+  background: #f9fbff;
+  padding: 0.45rem 0.6rem;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.template-popover li button[data-template-id] span {
+  display: block;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.template-popover .popover-item {
+  display: flex;
+  gap: 0.4rem;
+  align-items: flex-start;
+}
+
+.template-popover .favorite-toggle {
+  border: none;
+  background: transparent;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #fbbf24;
+}
+
+.template-popover li button[data-template-id] em {
+  display: block;
+  margin-top: 0.2rem;
+  color: #475569;
+  font-size: 0.8rem;
+  font-style: normal;
 }
 
 @media (max-width: 900px) {

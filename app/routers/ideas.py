@@ -9,14 +9,36 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.lib.calendar import month_context
-from app.models import Idea
-from app.schemas import IdeaCreate, IdeaRead, IdeaUpdate
-from app.services import fetch_idea, ideas_in_range, toggle_completion
+from app.models import Idea, IdeaBrief
+from app.schemas import (
+    AttachmentSignRequest,
+    AttachmentSignResponse,
+    BriefUpdate,
+    IdeaBriefRead,
+    IdeaBriefVersionRead,
+    IdeaCreate,
+    IdeaRead,
+    IdeaUpdate,
+)
+from app.services import (
+    fetch_idea,
+    get_or_create_brief,
+    ideas_in_range,
+    list_versions,
+    parse_brief_content,
+    restore_version,
+    toggle_completion,
+    update_brief,
+)
+from app.lib.storage import StorageConfigError, build_presigned_upload
 
 
 def _to_read_model(idea: Idea) -> IdeaRead:
     return IdeaRead.model_validate(idea)
 
+
+def _brief_response(idea: Idea, brief: IdeaBrief) -> IdeaBriefRead:
+    return IdeaBriefRead(idea_id=idea.id, updated_at=brief.updated_at, content=parse_brief_content(brief))
 router = APIRouter(prefix="/api", tags=["Ideas"])
 
 
@@ -57,6 +79,71 @@ def toggle_idea(idea_id: int, db: Session = Depends(get_db)) -> IdeaRead:
     db.refresh(idea)
     return _to_read_model(idea)
 
+
+@router.get("/ideas/{idea_id}/brief", response_model=IdeaBriefRead)
+def read_brief(idea_id: int, db: Session = Depends(get_db)) -> IdeaBriefRead:
+    idea = fetch_idea(db, idea_id)
+    brief = get_or_create_brief(db, idea)
+    return _brief_response(idea, brief)
+
+
+@router.put("/ideas/{idea_id}/brief", response_model=IdeaBriefRead)
+def write_brief(idea_id: int, payload: BriefUpdate, db: Session = Depends(get_db)) -> IdeaBriefRead:
+    idea = fetch_idea(db, idea_id)
+    brief = update_brief(db, idea, payload.content, autosave=False, label=payload.label)
+    return _brief_response(idea, brief)
+
+
+@router.post("/ideas/{idea_id}/brief/autosave", response_model=IdeaBriefRead)
+def autosave_brief(idea_id: int, payload: BriefUpdate, db: Session = Depends(get_db)) -> IdeaBriefRead:
+    idea = fetch_idea(db, idea_id)
+    brief = update_brief(db, idea, payload.content, autosave=True, label=payload.label or "Autosave")
+    return _brief_response(idea, brief)
+
+
+@router.get("/ideas/{idea_id}/brief/versions", response_model=list[IdeaBriefVersionRead])
+def brief_versions(idea_id: int, db: Session = Depends(get_db)) -> list[IdeaBriefVersionRead]:
+    idea = fetch_idea(db, idea_id)
+    versions = list_versions(db, idea)
+    return [IdeaBriefVersionRead.model_validate(v) for v in versions]
+
+
+@router.post("/ideas/{idea_id}/brief/versions/{version_id}/restore", response_model=IdeaBriefRead)
+def restore_brief_version(
+    idea_id: int,
+    version_id: int,
+    db: Session = Depends(get_db),
+) -> IdeaBriefRead:
+    idea = fetch_idea(db, idea_id)
+    version, content = restore_version(db, version_id)
+    if version.idea_id != idea.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Autosave not found")
+    brief = update_brief(db, idea, content, autosave=True, label=version.label or "Restore")
+    return _brief_response(idea, brief)
+
+
+@router.post("/ideas/{idea_id}/brief/attachments/sign", response_model=AttachmentSignResponse)
+def presign_attachment(
+    idea_id: int,
+    payload: AttachmentSignRequest,
+    db: Session = Depends(get_db),
+) -> AttachmentSignResponse:
+    # Ensure the idea exists before generating storage credentials.
+    fetch_idea(db, idea_id)
+    try:
+        presigned = build_presigned_upload(payload.filename, payload.content_type)
+    except StorageConfigError as exc:  # pragma: no cover - depends on env config
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
+    return AttachmentSignResponse(
+        key=presigned["key"],
+        url=presigned["url"],
+        upload_url=presigned["upload_url"],
+        fields=presigned["fields"],
+        content_type=presigned["content_type"],
+    )
 
 @router.delete("/ideas/{idea_id}", status_code=status.HTTP_204_NO_CONTENT, response_class=Response)
 def delete_idea(idea_id: int, db: Session = Depends(get_db)) -> Response:
